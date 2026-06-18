@@ -1,0 +1,112 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Deny all permissions by default; each job explicitly grants what it needs.
+permissions: {}
+
+jobs:
+  # Guard: fail fast if the tag doesn't point to a commit that's reachable from main.
+  # This blocks releases from arbitrary off-branch commits even if a tag slips through.
+  verify-tag-on-main:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history needed for branch containment check
+
+      - name: Verify tag is on main
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 "$GITHUB_REF")
+          if ! git merge-base --is-ancestor "$TAG_COMMIT" origin/main; then
+            echo "::error::Tag $GITHUB_REF_NAME does not point to a commit reachable from main. Aborting."
+            exit 1
+          fi
+
+  build-binaries:
+    needs: verify-tag-on-main
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            script: pkg:linux
+            artifact: ghtasktui-linux
+          - os: ubuntu-latest
+            script: pkg:macos-x64
+            artifact: ghtasktui-macos-x64
+          - os: ubuntu-latest
+            script: pkg:macos-arm64
+            artifact: ghtasktui-macos-arm64
+          - os: ubuntu-latest
+            script: pkg:win
+            artifact: ghtasktui-win.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - run: npm run ${{ matrix.script }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: bin/${{ matrix.artifact }}
+
+  release:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required to create the GitHub Release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: bin/
+          merge-multiple: true
+
+      - name: Create GitHub Release
+        # Pin to a commit SHA rather than a mutable tag to prevent supply chain attacks.
+        # To update: look up the SHA for the desired softprops/action-gh-release release tag.
+        # Current SHA corresponds to v2.2.2 — verify at:
+        # https://github.com/softprops/action-gh-release/releases
+        uses: softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda # v2.2.2
+        with:
+          files: bin/*
+          generate_release_notes: true
+
+  publish-npm:
+    needs: build-binaries
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # required for npm provenance attestation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+      - run: npm run build
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

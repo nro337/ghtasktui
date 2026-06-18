@@ -1,0 +1,29 @@
+{
+  "general": {
+    "defaultOwner": "@me",
+    "defaultView": "list",
+    "pageSize": 25
+  },
+  "appearance": {
+    "nerdFonts": false,
+    "dateFormat": "relative"
+  },
+  "keybindings": {
+    "quit": "q",
+    "help": "?",
+    "commandPalette": "ctrl+k",
+    "toggleSidebar": "b",
+    "toggleView": "v",
+    "refresh": "r",
+    "newItem": "n",
+    "deleteItem": "d",
+    "openBrowser": "o",
+    "filterOverlay": "f",
+    "clearFilters": "c",
+    "search": "/",
+    "moveItem": "m",
+    "editItem": "e",
+    "changeStatus": "s",
+    "changePriority": "p"
+  }
+}
