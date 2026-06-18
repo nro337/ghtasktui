@@ -1,6 +1,6 @@
 {
   "name": "ghtasktui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A Linear-inspired TUI for GitHub Projects, powered by the gh CLI",
   "author": "Nick Alico <nickalico.me>",
   "type": "module",
