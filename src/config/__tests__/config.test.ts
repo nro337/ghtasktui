@@ -29,6 +29,8 @@ describe('defaultConfig', () => {
   });
 
   it('has expected appearance defaults', () => {
+    expect(defaultConfig.appearance.theme).toBe('dark');
+    expect(defaultConfig.appearance.highContrastText).toBe(false);
     expect(defaultConfig.appearance.nerdFonts).toBe(false);
     expect(defaultConfig.appearance.sidebarWidth).toBe(22);
     expect(defaultConfig.appearance.detailPanelRatio).toBe(0.4);
@@ -73,11 +75,13 @@ describe('loadConfig — partial config file', () => {
 
   it('merges a partial appearance section', async () => {
     mockCosmiconfig.mockReturnValue(mockExplorer({
-      config: { appearance: { nerdFonts: true } },
+      config: { appearance: { theme: 'midnight' as const } },
     }) as unknown as ReturnType<typeof cosmiconfig>);
 
     const config = await loadConfig();
-    expect(config.appearance.nerdFonts).toBe(true);
+    expect(config.appearance.theme).toBe('midnight');
+    expect(config.appearance.highContrastText).toBe(false);
+    expect(config.appearance.nerdFonts).toBe(false);
     expect(config.appearance.sidebarWidth).toBe(defaultConfig.appearance.sidebarWidth);
     expect(config.general).toEqual(defaultConfig.general);
   });
@@ -116,7 +120,7 @@ describe('loadConfig — full config file', () => {
   it('replaces all fields when all sections are provided', async () => {
     const full = {
       general: { defaultOwner: 'acme', defaultView: 'board' as const, refreshInterval: 60000 },
-      appearance: { nerdFonts: true, sidebarWidth: 30, detailPanelRatio: 0.6 },
+      appearance: { theme: 'midnight' as const, highContrastText: true, nerdFonts: true, sidebarWidth: 30, detailPanelRatio: 0.6 },
       keybindings: { quit: 'x', help: 'h' },
       projects: { 'acme/api': { defaultView: 'list' as const } },
     };

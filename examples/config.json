@@ -2,11 +2,14 @@
   "general": {
     "defaultOwner": "@me",
     "defaultView": "list",
-    "pageSize": 25
+    "refreshInterval": 0
   },
   "appearance": {
+    "theme": "dark",
+    "highContrastText": false,
     "nerdFonts": false,
-    "dateFormat": "relative"
+    "sidebarWidth": 22,
+    "detailPanelRatio": 0.4
   },
   "keybindings": {
     "quit": "q",

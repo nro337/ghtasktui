@@ -3,13 +3,11 @@ import { Box, Text, useInput } from 'ink';
 import { useAppContext, useAppState } from '../hooks/useAppState.js';
 import { useProjectsLoader } from '../hooks/useGH.js';
 import { colors } from '../theme/theme.js';
-import { getIcons } from '../theme/icons.js';
 import Spinner from '../components/Spinner.js';
 
 export default function ProjectList() {
   const state = useAppState();
   const { dispatch } = useAppContext();
-  const icons = getIcons(state.config.appearance.nerdFonts);
   const { projects, projectsLoaded, loadProjects } = useProjectsLoader();
 
   const [selectedIdx, setSelectedIdx] = React.useState(0);
@@ -73,8 +71,8 @@ export default function ProjectList() {
             paddingX={isSelected ? 1 : 0}
           >
             <Box width={6}>
-              <Text color={isSelected ? colors.accentPurple : colors.textMuted}>
-                {isSelected ? icons.chevronRight : ' '} {project.number}
+              <Text color={isSelected ? colors.accentPurpleLight : colors.textMuted} bold={isSelected}>
+                {isSelected ? '▶' : ' '} {project.number}
               </Text>
             </Box>
             <Box flexGrow={1}>
@@ -83,14 +81,14 @@ export default function ProjectList() {
               </Text>
             </Box>
             <Box width={40}>
-              <Text color={colors.textMuted}>
+              <Text color={isSelected ? colors.textSecondary : colors.textMuted}>
                 {project.shortDescription
                   ? project.shortDescription.slice(0, 38)
                   : '—'}
               </Text>
             </Box>
             <Box width={8}>
-              <Text color={project.closed ? colors.statusCanceled : colors.statusDone}>
+              <Text color={project.closed ? colors.statusCanceled : colors.statusDone} bold={isSelected}>
                 {project.closed ? 'closed' : 'open'}
               </Text>
             </Box>

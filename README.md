@@ -25,6 +25,7 @@ A Linear-inspired terminal UI for GitHub Projects, powered by the `gh` CLI.
 - **Lazy loading** — items and fields load on demand; cached in-session so navigation is instant
 - **Optimistic updates** — field changes apply immediately in the UI
 - **Nerd Fonts support** — richer icons with `GHTASKTUI_NERD_FONTS=1`
+- **Theming** — choose between dark and midnight themes, with optional high-contrast text
 - **Configurable** — JSON config at `~/.config/ghtasktui/config.json`
 
 ## Requirements
@@ -116,11 +117,14 @@ Create `~/.config/ghtasktui/config.json`:
   "general": {
     "defaultOwner": "myorg",
     "defaultView": "board",
-    "pageSize": 50
+    "refreshInterval": 0
   },
   "appearance": {
+    "theme": "midnight",
+    "highContrastText": true,
     "nerdFonts": true,
-    "dateFormat": "relative"
+    "sidebarWidth": 24,
+    "detailPanelRatio": 0.45
   }
 }
 ```

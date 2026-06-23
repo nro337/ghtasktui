@@ -485,7 +485,7 @@ function KanbanCard({
   const firstLabel  = item.labels[0];
   const titleWidth  = cardWidth - 5; // cursor(1) + priority(2) + id(5) + spaces
 
-  const cursorChar  = isSelected && isActiveCol ? '›' : ' ';
+  const cursorChar  = isSelected && isActiveCol ? '▶' : ' ';
   const titleColor  = isSelected && isActiveCol ? colors.textPrimary : colors.textSecondary;
   const idStr       = item.content ? `#${item.content.number}` : '';
 
@@ -493,7 +493,7 @@ function KanbanCard({
     <Box flexDirection="column" marginBottom={1}>
       {/* Title row */}
       <Box gap={1}>
-        <Text color={isSelected && isActiveCol ? colors.accentPurple : colors.textMuted}>
+        <Text color={isSelected && isActiveCol ? colors.accentPurpleLight : colors.textMuted}>
           {cursorChar}
         </Text>
         <Text color={priorityColor}>{priorityIcon}</Text>
