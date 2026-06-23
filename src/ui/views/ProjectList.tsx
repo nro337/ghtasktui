@@ -3,11 +3,13 @@ import { Box, Text, useInput } from 'ink';
 import { useAppContext, useAppState } from '../hooks/useAppState.js';
 import { useProjectsLoader } from '../hooks/useGH.js';
 import { colors } from '../theme/theme.js';
+import { getIcons } from '../theme/icons.js';
 import Spinner from '../components/Spinner.js';
 
 export default function ProjectList() {
   const state = useAppState();
   const { dispatch } = useAppContext();
+  const icons = getIcons(state.config.appearance.nerdFonts);
   const { projects, projectsLoaded, loadProjects } = useProjectsLoader();
 
   const [selectedIdx, setSelectedIdx] = React.useState(0);
@@ -72,7 +74,7 @@ export default function ProjectList() {
           >
             <Box width={6}>
               <Text color={isSelected ? colors.accentPurpleLight : colors.textMuted} bold={isSelected}>
-                {isSelected ? '▶' : ' '} {project.number}
+                {isSelected ? icons.arrowRight : ' '} {project.number}
               </Text>
             </Box>
             <Box flexGrow={1}>

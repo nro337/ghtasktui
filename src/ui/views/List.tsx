@@ -6,7 +6,7 @@ import {
   useFieldsLoader,
   useItemMutations,
 } from '../hooks/useGH.js';
-import { colors, priorityColors, statusColors } from '../theme/theme.js';
+import { colors, priorityColor, statusColor } from '../theme/theme.js';
 import { getIcons } from '../theme/icons.js';
 import {
   findField,
@@ -503,9 +503,9 @@ function ItemRow({
   const statusOption   = statusField   ? getItemOption(item, statusField)   : undefined;
 
   const priorityIcon  = getPriorityIcon(priorityOption?.name, icons);
-  const priorityColor = priorityColors[priorityOption?.name?.toLowerCase() ?? ''] ?? colors.textMuted;
+  const priorityTone = priorityColor(priorityOption?.name);
   const typeIcon      = getTypeIcon(item.type, icons);
-  const statusColor   = statusColors[statusOption?.name?.toLowerCase() ?? ''] ?? colors.textSecondary;
+  const statusTone    = statusColor(statusOption?.name);
 
   const idStr = item.content ? `#${item.content.number}` : '';
   const dateStr = relativeTime(item.updatedAt);
@@ -522,7 +522,7 @@ function ItemRow({
 
       {/* Priority */}
       <Box width={2}>
-        <Text color={priorityColor}>{priorityIcon}</Text>
+        <Text color={priorityTone}>{priorityIcon}</Text>
       </Box>
 
       {/* Type */}
@@ -556,7 +556,7 @@ function ItemRow({
 
       {/* Status */}
       <Box width={12}>
-        <Text color={isCursor ? colors.textPrimary : statusColor}>
+        <Text color={isCursor ? colors.textPrimary : statusTone}>
           {statusOption?.name ?? ''}
         </Text>
       </Box>

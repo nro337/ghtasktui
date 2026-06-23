@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { initTheme, colors, statusColors, priorityColors } from '../theme.js';
+import { initTheme, colors, statusColor, priorityColor } from '../theme.js';
 
 describe('initTheme', () => {
   it('applies dark theme defaults', () => {
@@ -12,7 +12,7 @@ describe('initTheme', () => {
     initTheme({ theme: 'midnight', highContrastText: true });
     expect(colors.accentPurple).toBe('#3B82F6');
     expect(colors.textSecondary).toBe('#D4D4D4');
-    expect(statusColors['in progress']).toBe('#60A5FA');
-    expect(priorityColors.none).toBe(colors.textMuted);
+    expect(statusColor('In Progress')).toBe('#60A5FA');
+    expect(priorityColor('none')).toBe(colors.textMuted);
   });
 });

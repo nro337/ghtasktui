@@ -1,5 +1,3 @@
-import chalk from 'chalk';
-
 type Palette = {
   background: string;
   surface: string;
@@ -85,56 +83,33 @@ export const colors: Palette = paletteFor('dark', false);
 
 export type ColorToken = keyof typeof colors;
 
-// Pre-built chalk instances — use these for non-JSX string coloring
-function buildChalk(p: Palette) {
-  return {
-    primary: chalk.hex(p.textPrimary),
-    secondary: chalk.hex(p.textSecondary),
-    muted: chalk.hex(p.textMuted),
-    accent: chalk.hex(p.accentPurple),
-    accentLight: chalk.hex(p.accentPurpleLight),
-    border: chalk.hex(p.border),
-    success: chalk.hex(p.success),
-    error: chalk.hex(p.error),
-    warning: chalk.hex(p.warning),
-    info: chalk.hex(p.info),
-    urgentBg: chalk.bgHex(p.priorityUrgent).hex('#fff'),
-    dim: chalk.hex(p.textMuted).dim,
-  } as const;
-}
-
-export let c = buildChalk(colors);
-
-// Status color map — index by option name (case-insensitive match at call site)
-function buildStatusColors(p: Palette): Record<string, string> {
-  return {
-    todo: p.statusTodo,
-    'in progress': p.statusInProgress,
-    done: p.statusDone,
-    canceled: p.statusCanceled,
-    cancelled: p.statusCanceled,
-  };
-}
-
-export let statusColors: Record<string, string> = buildStatusColors(colors);
-
-function buildPriorityColors(p: Palette): Record<string, string> {
-  return {
-    urgent: p.priorityUrgent,
-    high: p.priorityHigh,
-    medium: p.priorityMedium,
-    low: p.priorityLow,
-    none: p.textMuted,
-  };
-}
-
-export let priorityColors: Record<string, string> = buildPriorityColors(colors);
-
 export function initTheme(opts: { theme: 'dark' | 'midnight'; highContrastText: boolean }) {
   Object.assign(colors, paletteFor(opts.theme, opts.highContrastText));
-  c = buildChalk(colors);
-  statusColors = buildStatusColors(colors);
-  priorityColors = buildPriorityColors(colors);
+}
+
+export function statusColor(name: string | undefined): string {
+  switch (name?.toLowerCase()) {
+    case 'todo': return colors.statusTodo;
+    case 'in progress': return colors.statusInProgress;
+    case 'done': return colors.statusDone;
+    case 'canceled':
+    case 'cancelled':
+      return colors.statusCanceled;
+    default:
+      return colors.textSecondary;
+  }
+}
+
+export function priorityColor(name: string | undefined): string {
+  switch (name?.toLowerCase()) {
+    case 'urgent': return colors.priorityUrgent;
+    case 'high': return colors.priorityHigh;
+    case 'medium': return colors.priorityMedium;
+    case 'low': return colors.priorityLow;
+    case 'none': return colors.textMuted;
+    default:
+      return colors.textMuted;
+  }
 }
 
 export function toastColor(kind: 'info' | 'success' | 'error'): string {

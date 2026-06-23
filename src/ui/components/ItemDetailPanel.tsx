@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useAppContext } from '../hooks/useAppState.js';
 import { useItemMutations } from '../hooks/useGH.js';
-import { colors, priorityColors, statusColors } from '../theme/theme.js';
+import { colors, priorityColor, statusColor } from '../theme/theme.js';
 import { getIcons } from '../theme/icons.js';
 import { findField, getItemOption, getItemOptionId, cycleOption } from '../utils/fields.js';
 import { relativeTime } from '../utils/time.js';
@@ -284,11 +284,11 @@ function Hint({ k, label }: { k: string; label: string }) {
 }
 
 function getStatusColor(name: string): string {
-  return statusColors[name.toLowerCase()] ?? colors.textSecondary;
+  return statusColor(name);
 }
 
 function getPriorityColor(name: string): string {
-  return priorityColors[name.toLowerCase()] ?? colors.textSecondary;
+  return priorityColor(name);
 }
 
 function fieldValueDisplay(fv: FieldValue, field: Field): string | null {

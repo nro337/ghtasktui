@@ -100,10 +100,14 @@ function AppShell() {
 }
 
 export default function App({ config, debug: _debug }: Props) {
-  initTheme({
-    theme: config.appearance.theme,
-    highContrastText: config.appearance.highContrastText,
-  });
+  const themeInitializedRef = React.useRef(false);
+  if (!themeInitializedRef.current) {
+    initTheme({
+      theme: config.appearance.theme,
+      highContrastText: config.appearance.highContrastText,
+    });
+    themeInitializedRef.current = true;
+  }
 
   const [state, dispatch] = useReducer(appReducer, config, initialState);
 

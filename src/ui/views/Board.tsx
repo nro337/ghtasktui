@@ -6,7 +6,7 @@ import {
   useFieldsLoader,
   useItemMutations,
 } from '../hooks/useGH.js';
-import { colors, priorityColors } from '../theme/theme.js';
+import { colors, priorityColor } from '../theme/theme.js';
 import { getIcons } from '../theme/icons.js';
 import {
   findField,
@@ -479,7 +479,7 @@ function KanbanCard({
 }: KanbanCardProps) {
   const priorityOption = priorityField ? getItemOption(item, priorityField) : undefined;
   const priorityIcon   = getPriorityIcon(priorityOption?.name, icons);
-  const priorityColor  = priorityColors[priorityOption?.name?.toLowerCase() ?? ''] ?? colors.textMuted;
+  const priorityTone   = priorityColor(priorityOption?.name);
 
   const assignee    = item.assignees[0]?.login ?? '';
   const firstLabel  = item.labels[0];
@@ -496,7 +496,7 @@ function KanbanCard({
         <Text color={isSelected && isActiveCol ? colors.accentPurpleLight : colors.textMuted}>
           {cursorChar}
         </Text>
-        <Text color={priorityColor}>{priorityIcon}</Text>
+        <Text color={priorityTone}>{priorityIcon}</Text>
         <Text color={colors.textMuted}>{idStr}</Text>
         {isEditing ? (
           <InlineTextInput
