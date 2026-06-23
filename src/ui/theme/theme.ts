@@ -81,7 +81,7 @@ function paletteFor(theme: 'dark' | 'midnight', highContrastText: boolean): Pale
   };
 }
 
-export let colors: Palette = paletteFor('dark', false);
+export const colors: Palette = paletteFor('dark', false);
 
 export type ColorToken = keyof typeof colors;
 
@@ -131,7 +131,7 @@ function buildPriorityColors(p: Palette): Record<string, string> {
 export let priorityColors: Record<string, string> = buildPriorityColors(colors);
 
 export function initTheme(opts: { theme: 'dark' | 'midnight'; highContrastText: boolean }) {
-  colors = paletteFor(opts.theme, opts.highContrastText);
+  Object.assign(colors, paletteFor(opts.theme, opts.highContrastText));
   c = buildChalk(colors);
   statusColors = buildStatusColors(colors);
   priorityColors = buildPriorityColors(colors);
