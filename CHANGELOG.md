@@ -7,8 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.0] - 2026-06-22
 
-### Fixed
-- Standalone binary builds (`pkg:all`) now work correctly by producing a CJS bundle for `@yao-pkg/pkg` to consume, avoiding an ESM `import.meta` parse failure
+### Changed
+- Replaced `@yao-pkg/pkg` with Node.js Single Executable Applications (SEA) for standalone binary builds — zero warnings, no external tooling beyond Node itself
+- Targets Node 26; uses `--build-sea` with `mainFormat: "module"` so the ESM bundle is embedded directly without a CJS shim or postject
+- Binary builds now require native OS runners (no cross-compilation); CI matrix updated to use `ubuntu-latest`, `macos-13`, `macos-latest`, and `windows-latest`
+- Minimum Node.js version bumped to 26
 - App version is now inlined at build time rather than read from `package.json` at runtime
 
 ## [0.2.0] - 2026-06-22

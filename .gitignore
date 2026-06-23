@@ -1,7 +1,8 @@
 node_modules/
 dist/
-dist-pkg/
 bin/
+.sea-config.tmp.json
+sea-prep.blob
 *.js.map
 .DS_Store
 dev.md
