@@ -40,12 +40,15 @@ jobs:
           - os: ubuntu-latest
             script: sea:linux
             artifact: ghtasktui-linux
+            archive: ghtasktui-linux.tar.gz
           - os: macos-latest   # Apple Silicon
             script: sea:macos-arm64
             artifact: ghtasktui-macos-arm64
+            archive: ghtasktui-macos-arm64.tar.gz
           - os: windows-latest
             script: sea:win
             artifact: ghtasktui-win.exe
+            archive: ghtasktui-win.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -60,11 +63,14 @@ jobs:
       - run: npm run build
       - run: npm run ${{ matrix.script }}
 
+      - name: Package binary (Unix)
+        if: matrix.os != 'windows-latest'
+        run: tar -czf bin/${{ matrix.archive }} -C bin ${{ matrix.artifact }}
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: bin/${{ matrix.artifact }}
+          name: ${{ matrix.archive }}
+          path: bin/${{ matrix.archive }}
 
   release:
     needs: build-binaries
@@ -78,6 +84,7 @@ jobs:
         with:
           path: bin/
           merge-multiple: true
+          pattern: 'ghtasktui-*'
 
       - name: Create GitHub Release
         # Pin to a commit SHA rather than a mutable tag to prevent supply chain attacks.
