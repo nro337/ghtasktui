@@ -48,7 +48,6 @@ Download a pre-built binary from the [Releases](../../releases) page:
 | Platform       | Binary                      |
 |----------------|-----------------------------|
 | macOS (Apple)  | `ghtasktui-macos-arm64`     |
-| macOS (Intel)  | `ghtasktui-macos-x64`       |
 | Linux (x64)    | `ghtasktui-linux`           |
 | Windows (x64)  | `ghtasktui-win.exe`         |
 
