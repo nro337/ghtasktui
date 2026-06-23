@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execSync } from 'child_process';
-import { writeFileSync, unlinkSync, mkdirSync } from 'fs';
+import { writeFileSync, unlinkSync, mkdirSync, chmodSync } from 'fs';
 import { join, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -39,5 +39,7 @@ try {
 
 // Ad-hoc signing is required on macOS — Gatekeeper rejects unsigned binaries.
 if (isMacos) execSync(`codesign --sign - "${outPath}"`, { stdio: 'inherit' });
+
+if (target !== 'win') chmodSync(outPath, 0o755);
 
 console.log(`\n✓  ${outPath}`);
