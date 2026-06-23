@@ -15,7 +15,7 @@ import type { Item, Project, Field } from '../../../gh/types.js';
 
 const mockConfig: Config = {
   general: { defaultOwner: '@me', defaultView: 'list', refreshInterval: 0 },
-  appearance: { nerdFonts: false, sidebarWidth: 22, detailPanelRatio: 0.4 },
+  appearance: { theme: 'dark', highContrastText: false, nerdFonts: false, sidebarWidth: 22, detailPanelRatio: 0.4 },
   keybindings: {},
   projects: {},
 };

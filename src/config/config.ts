@@ -9,6 +9,8 @@ export interface Config {
     refreshInterval: number;
   };
   appearance: {
+    theme: 'dark' | 'midnight';
+    highContrastText: boolean;
     nerdFonts: boolean;
     sidebarWidth: number;
     detailPanelRatio: number;
@@ -24,6 +26,8 @@ export const defaultConfig: Config = {
     refreshInterval: 0,
   },
   appearance: {
+    theme: 'dark',
+    highContrastText: false,
     nerdFonts: false,
     sidebarWidth: 22,
     detailPanelRatio: 0.4,

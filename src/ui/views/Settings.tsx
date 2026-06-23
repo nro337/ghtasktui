@@ -13,6 +13,8 @@ export default function Settings() {
       <Box marginTop={1} flexDirection="column" gap={0}>
         <Row label="Owner"           value={state.config.general.defaultOwner} />
         <Row label="Default view"    value={state.config.general.defaultView} />
+        <Row label="Theme"           value={state.config.appearance.theme} />
+        <Row label="High contrast"   value={String(state.config.appearance.highContrastText)} />
         <Row label="Nerd fonts"      value={String(state.config.appearance.nerdFonts)} />
         <Row label="Sidebar width"   value={String(state.config.appearance.sidebarWidth)} />
         <Row label="Detail ratio"    value={String(state.config.appearance.detailPanelRatio)} />

@@ -77,8 +77,8 @@ export default function Sidebar() {
 
           return (
             <Box key={project.number} gap={1}>
-              <Text color={isActive ? colors.accentPurple : colors.textMuted}>
-                {isActive ? icons.arrowRight : ' '}
+              <Text color={isActive ? colors.accentPurpleLight : colors.textMuted}>
+                {isActive ? '▶' : ' '}
               </Text>
               <Text
                 color={isActive ? colors.textPrimary : colors.textSecondary}
@@ -97,7 +97,7 @@ export default function Sidebar() {
       </Box>
 
       <Box gap={1}>
-        <Text color={state.view === 'LIST' ? colors.accentPurple : colors.textMuted}>
+        <Text color={state.view === 'LIST' ? colors.accentPurpleLight : colors.textMuted}>
           {icons.list}
         </Text>
         <Text
@@ -109,7 +109,7 @@ export default function Sidebar() {
       </Box>
 
       <Box gap={1}>
-        <Text color={state.view === 'BOARD' ? colors.accentPurple : colors.textMuted}>
+        <Text color={state.view === 'BOARD' ? colors.accentPurpleLight : colors.textMuted}>
           {icons.board}
         </Text>
         <Text

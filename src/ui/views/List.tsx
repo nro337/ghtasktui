@@ -6,7 +6,7 @@ import {
   useFieldsLoader,
   useItemMutations,
 } from '../hooks/useGH.js';
-import { colors, priorityColors, statusColors } from '../theme/theme.js';
+import { colors, priorityColor, statusColor } from '../theme/theme.js';
 import { getIcons } from '../theme/icons.js';
 import {
   findField,
@@ -503,9 +503,9 @@ function ItemRow({
   const statusOption   = statusField   ? getItemOption(item, statusField)   : undefined;
 
   const priorityIcon  = getPriorityIcon(priorityOption?.name, icons);
-  const priorityColor = priorityColors[priorityOption?.name?.toLowerCase() ?? ''] ?? colors.textMuted;
+  const priorityTone = priorityColor(priorityOption?.name);
   const typeIcon      = getTypeIcon(item.type, icons);
-  const statusColor   = statusColors[statusOption?.name?.toLowerCase() ?? ''] ?? colors.textSecondary;
+  const statusTone    = statusColor(statusOption?.name);
 
   const idStr = item.content ? `#${item.content.number}` : '';
   const dateStr = relativeTime(item.updatedAt);
@@ -518,21 +518,21 @@ function ItemRow({
       paddingRight={1}
     >
       {/* Cursor indicator */}
-      <Text color={isCursor ? colors.accentPurple : 'transparent'}> {isCursor ? '›' : ' '}</Text>
+      <Text color={isCursor ? colors.accentPurpleLight : 'transparent'}>{isCursor ? '▶' : ' '}</Text>
 
       {/* Priority */}
       <Box width={2}>
-        <Text color={priorityColor}>{priorityIcon}</Text>
+        <Text color={priorityTone}>{priorityIcon}</Text>
       </Box>
 
       {/* Type */}
       <Box width={1}>
-        <Text color={colors.textMuted}>{typeIcon}</Text>
+        <Text color={isCursor ? colors.textSecondary : colors.textMuted}>{typeIcon}</Text>
       </Box>
 
       {/* ID */}
       <Box width={6}>
-        <Text color={colors.textMuted}>{idStr}</Text>
+        <Text color={isCursor ? colors.textSecondary : colors.textMuted}>{idStr}</Text>
       </Box>
 
       {/* Title (grows) */}
@@ -556,21 +556,21 @@ function ItemRow({
 
       {/* Status */}
       <Box width={12}>
-        <Text color={statusColor}>
+        <Text color={isCursor ? colors.textPrimary : statusTone}>
           {statusOption?.name ?? ''}
         </Text>
       </Box>
 
       {/* Assignee */}
       <Box width={10}>
-        <Text color={colors.textMuted}>
+        <Text color={isCursor ? colors.textSecondary : colors.textMuted}>
           {assignee ? `@${assignee.slice(0, 8)}` : ''}
         </Text>
       </Box>
 
       {/* Date */}
       <Box width={4}>
-        <Text color={colors.textMuted}>{dateStr}</Text>
+        <Text color={isCursor ? colors.textSecondary : colors.textMuted}>{dateStr}</Text>
       </Box>
     </Box>
   );

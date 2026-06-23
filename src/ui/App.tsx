@@ -3,6 +3,7 @@ import { Box, useInput } from 'ink';
 import { AppContext, appReducer, initialState, type AppView } from './hooks/useAppState.js';
 import { matchKey, DEFAULT_KEYMAP } from './hooks/useKeymap.js';
 import type { Config } from '../config/config.js';
+import { initTheme } from './theme/theme.js';
 
 import Header     from './components/Header.js';
 import Sidebar    from './components/Sidebar.js';
@@ -99,6 +100,15 @@ function AppShell() {
 }
 
 export default function App({ config, debug: _debug }: Props) {
+  const themeInitializedRef = React.useRef(false);
+  if (!themeInitializedRef.current) {
+    initTheme({
+      theme: config.appearance.theme,
+      highContrastText: config.appearance.highContrastText,
+    });
+    themeInitializedRef.current = true;
+  }
+
   const [state, dispatch] = useReducer(appReducer, config, initialState);
 
   return (
