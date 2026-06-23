@@ -40,9 +40,6 @@ jobs:
           - os: ubuntu-latest
             script: sea:linux
             artifact: ghtasktui-linux
-          - os: macos-13       # last Intel macOS runner
-            script: sea:macos-x64
-            artifact: ghtasktui-macos-x64
           - os: macos-latest   # Apple Silicon
             script: sea:macos-arm64
             artifact: ghtasktui-macos-arm64

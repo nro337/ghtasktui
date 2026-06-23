@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-06-22
+### Remove Intel macOS binary
+- The Intel macOS binary (`ghtasktui-macos-x64`) is no longer built or published, as Node.js SEA builds now require native OS runners. Users on Intel Macs can still run the Apple Silicon binary (`ghtasktui-macos-arm64`) via Rosetta 2.
+
 ## [0.3.1] - 2026-06-22
 ### Trusted Publishing
 - Set up trusted publishing for npm
