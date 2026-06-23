@@ -1,6 +1,6 @@
 {
   "name": "ghtasktui",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "A Linear-inspired TUI for GitHub Projects, powered by the gh CLI",
   "author": "Nick Alico <nickalico.me>",
   "type": "module",
@@ -31,6 +31,10 @@
     "terminal",
     "linear"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nro337/ghtasktui"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=26"
