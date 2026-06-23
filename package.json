@@ -17,11 +17,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
-    "pkg:linux": "pkg dist/cli.js --target node20-linux-x64 --output bin/ghtasktui-linux",
-    "pkg:macos-x64": "pkg dist/cli.js --target node20-macos-x64 --output bin/ghtasktui-macos-x64",
-    "pkg:macos-arm64": "pkg dist/cli.js --target node20-macos-arm64 --output bin/ghtasktui-macos-arm64",
-    "pkg:win": "pkg dist/cli.js --target node20-win-x64 --output bin/ghtasktui-win.exe",
-    "pkg:all": "npm run pkg:linux && npm run pkg:macos-x64 && npm run pkg:macos-arm64 && npm run pkg:win",
+    "pkg:linux": "pkg dist-pkg/cli.js --target node20-linux-x64 --output bin/ghtasktui-linux",
+    "pkg:macos-x64": "pkg dist-pkg/cli.js --target node20-macos-x64 --output bin/ghtasktui-macos-x64",
+    "pkg:macos-arm64": "pkg dist-pkg/cli.js --target node20-macos-arm64 --output bin/ghtasktui-macos-arm64",
+    "pkg:win": "pkg dist-pkg/cli.js --target node20-win-x64 --output bin/ghtasktui-win.exe",
+    "pkg:all": "npm run build && npm run pkg:linux && npm run pkg:macos-x64 && npm run pkg:macos-arm64 && npm run pkg:win",
     "prepublishOnly": "npm run typecheck && npm run build"
   },
   "keywords": [

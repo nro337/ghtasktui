@@ -1,18 +1,15 @@
-import { createRequire } from 'module';
 import { program } from 'commander';
 import { render } from 'ink';
-import React from 'react';
 import { checkGHInstalled, checkAuth, enableDebug } from './gh/client.js';
 import { loadConfig } from './config/config.js';
 import App from './ui/App.js';
 
-const _require = createRequire(import.meta.url);
-const { version } = _require('../package.json') as { version: string };
+declare const __APP_VERSION__: string;
 
 program
   .name('ghtasktui')
   .description('A Linear-inspired TUI for GitHub Projects')
-  .version(version)
+  .version(__APP_VERSION__)
   .option('--owner <owner>', 'GitHub owner (user or org)', '@me')
   .option('--debug', 'Log gh subprocess calls to ~/.config/ghtasktui/debug.log')
   .action(async (opts: { owner: string; debug: boolean }) => {
