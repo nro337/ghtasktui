@@ -31,6 +31,10 @@
     "terminal",
     "linear"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nro337/ghtasktui"
+  },
   "license": "MIT",
   "engines": {
     "node": ">=26"
