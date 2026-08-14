@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useAppContext } from '../hooks/useAppState.js';
-import { useItemMutations } from '../hooks/useGH.js';
+import { useItemMutations, useProjectRepositories } from '../hooks/useGH.js';
+import { useExternalEditor } from '../hooks/useExternalEditor.js';
 import { colors, priorityColor, statusColor } from '../theme/theme.js';
 import { getIcons } from '../theme/icons.js';
 import { findField, getItemOption, getItemOptionId, cycleOption } from '../utils/fields.js';
 import { relativeTime } from '../utils/time.js';
 import * as client from '../../gh/client.js';
-import SelectPicker from './SelectPicker.js';
+import SelectPicker, { type PickerOption } from './SelectPicker.js';
 import InlineTextInput from './InlineTextInput.js';
+import Spinner from './Spinner.js';
 import type { Item, Field, FieldValue } from '../../gh/types.js';
 
 type ActivePicker = 'status' | 'priority' | null;
@@ -30,30 +32,63 @@ export default function ItemDetailPanel({
 }: Props) {
   const { state, dispatch } = useAppContext();
   const icons = getIcons(state.config.appearance.nerdFonts);
-  const { deleteItem, editField, editTitle } = useItemMutations(projectNumber);
+  const { deleteItem, editField, editTitle, editBody, convertToIssue } = useItemMutations(projectNumber);
+  const { openEditor } = useExternalEditor();
+  const { repositories, repositoriesLoaded, repositoriesLoading, loadRepositories } =
+    useProjectRepositories(state.activeProject?.id);
 
   const [activePicker, setActivePicker] = useState<ActivePicker>(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(item.title);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [convertingToIssue, setConvertingToIssue] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const editingBodyRef = useRef(false);
 
   const statusField   = findField(fields, 'Status');
   const priorityField = findField(fields, 'Priority');
   const statusOption   = statusField   ? getItemOption(item, statusField)   : undefined;
   const priorityOption = priorityField ? getItemOption(item, priorityField) : undefined;
+  const hasLinkedContent = item.content !== undefined;
 
   const pickerOpen = activePicker !== null;
-  const overlayOpen = state.commandPaletteOpen || state.helpOpen;
-  const inputActive = isActive && !pickerOpen && !editingTitle && !confirmingDelete && !overlayOpen;
+  const overlayOpen = state.commandPaletteOpen || state.helpOpen || state.commentsOverlayOpen;
+  const inputActive =
+    isActive && !pickerOpen && !editingTitle && !confirmingDelete && !overlayOpen &&
+    !convertingToIssue;
+
+  const editBodyInEditor = async () => {
+    if (editingBodyRef.current) return;
+    editingBodyRef.current = true;
+    try {
+      const next = await openEditor(item.body, 'ghtasktui-description.md');
+      if (next !== null) await editBody(item, next);
+    } finally {
+      editingBodyRef.current = false;
+    }
+  };
 
   useInput(
     (input, key) => {
       if (key.escape) { onClose(); return; }
+      if (editingBodyRef.current) return;
 
       switch (input.toLowerCase()) {
         case 'e':
           setTitleDraft(item.title);
           setEditingTitle(true);
+          break;
+        case 'i':
+          void editBodyInEditor();
+          break;
+        case 'c':
+          if (hasLinkedContent) dispatch({ type: 'TOGGLE_COMMENTS_OVERLAY' });
+          break;
+        case 'u':
+          if (item.type === 'DRAFT_ISSUE') {
+            setConvertingToIssue(true);
+            void loadRepositories();
+          }
           break;
         case 's':
           if (statusField) setActivePicker('status');
@@ -74,6 +109,15 @@ export default function ItemDetailPanel({
     { isActive: inputActive },
   );
 
+  // Convert-to-issue overlay: only need to catch Esc here — repo selection itself
+  // is handled by SelectPicker once repositories have loaded.
+  useInput(
+    (_input, key) => {
+      if (key.escape) setConvertingToIssue(false);
+    },
+    { isActive: convertingToIssue && repositories.length === 0 && !converting },
+  );
+
   // Confirm delete input
   useInput(
     (input, key) => {
@@ -92,6 +136,19 @@ export default function ItemDetailPanel({
     setEditingTitle(false);
     if (val.trim() && val.trim() !== item.title) {
       await editTitle(item, val.trim());
+    }
+  };
+
+  const handleConvertSelect = async (option: PickerOption) => {
+    if (converting) return;
+    const repo = repositories.find(r => r.id === option.id);
+    if (!repo) return;
+    setConverting(true);
+    try {
+      const ok = await convertToIssue(item, repo);
+      if (ok) setConvertingToIssue(false);
+    } finally {
+      setConverting(false);
     }
   };
 
@@ -217,6 +274,36 @@ export default function ItemDetailPanel({
         </Box>
       )}
 
+      {/* Convert to issue */}
+      {convertingToIssue && (
+        <Box borderStyle="round" borderColor={colors.borderFocus} paddingX={1} marginTop={1} flexDirection="column">
+          {converting ? (
+            <Spinner label="Converting…" />
+          ) : repositoriesLoading || !repositoriesLoaded ? (
+            <Spinner label="Loading linked repositories…" />
+          ) : repositories.length === 0 ? (
+            <Box flexDirection="column">
+              <Text color={colors.textMuted}>
+                No repositories linked to this project. Link one first:
+              </Text>
+              <Text color={colors.textSecondary}>
+                gh project link {projectNumber} --owner {state.owner} -r owner/repo
+              </Text>
+              <Box marginTop={1}>
+                <Text color={colors.textMuted}>Press <Text color={colors.textSecondary}>Esc</Text> to close</Text>
+              </Box>
+            </Box>
+          ) : (
+            <SelectPicker
+              title="Convert to issue in…"
+              options={repositories.map(r => ({ id: r.id, name: r.nameWithOwner }))}
+              onSelect={handleConvertSelect}
+              onCancel={() => setConvertingToIssue(false)}
+            />
+          )}
+        </Box>
+      )}
+
       {/* Pickers */}
       {activePicker === 'status' && statusField && (
         <SelectPicker
@@ -240,6 +327,9 @@ export default function ItemDetailPanel({
       {/* Key hints */}
       <Box marginTop={1} flexWrap="wrap" gap={1}>
         <Hint k="E" label="edit" />
+        <Hint k="I" label="description" />
+        {hasLinkedContent && <Hint k="C" label="comments" />}
+        {item.type === 'DRAFT_ISSUE' && <Hint k="U" label="convert to issue" />}
         <Hint k="S" label="status" />
         <Hint k="P" label="priority" />
         <Hint k="O" label="browser" />

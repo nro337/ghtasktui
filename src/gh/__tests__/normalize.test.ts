@@ -123,6 +123,21 @@ describe('normalizeItem', () => {
     expect(result.type).toBe('ISSUE');
   });
 
+  it('derives type from content.type when top-level type is absent (real gh CLI output)', () => {
+    // `gh project item-list` doesn't populate the top-level `type` field in
+    // current CLI versions — only `content.type` is present. Without deriving
+    // from it, every issue/PR would be misclassified as a draft.
+    const issueResult = normalizeItem(rawItem({
+      content: { type: 'Issue', number: 1, url: 'https://x', state: 'open' },
+    }));
+    expect(issueResult.type).toBe('ISSUE');
+
+    const prResult = normalizeItem(rawItem({
+      content: { type: 'PullRequest', number: 2, url: 'https://x', state: 'open' },
+    }));
+    expect(prResult.type).toBe('PULL_REQUEST');
+  });
+
   it('defaults optional string fields to empty string', () => {
     const result = normalizeItem(rawItem());
     expect(result.status).toBe('');

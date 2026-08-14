@@ -12,8 +12,10 @@ import {
   editItemField,
   deleteItem,
   editItemTitle,
+  editItemBody,
   openInBrowser,
 } from '../client.js';
+import type { Item } from '../types.js';
 
 const mockExeca = vi.mocked(execa);
 
@@ -34,6 +36,55 @@ function lastGHArgs(): string[] {
   const call = mockExeca.mock.calls.find(c => c[0] === 'gh');
   if (!call) throw new Error('no gh call found');
   return call[1] as string[];
+}
+
+/** Capture the args passed to the nth (0-indexed) execa('gh', ...) call. */
+function ghArgsAt(n: number): string[] {
+  const calls = mockExeca.mock.calls.filter(c => c[0] === 'gh');
+  const call = calls[n];
+  if (!call) throw new Error(`no gh call at index ${n}`);
+  return call[1] as string[];
+}
+
+function draftItem(overrides: Partial<Item> = {}): Item {
+  return {
+    id: 'PVTI_DRAFT',
+    title: 'Draft item',
+    type: 'DRAFT_ISSUE',
+    status: '',
+    priority: '',
+    assignees: [],
+    labels: [],
+    createdAt: '',
+    updatedAt: '',
+    body: '',
+    fieldValues: {},
+    ...overrides,
+  };
+}
+
+function issueItem(overrides: Partial<Item> = {}): Item {
+  return {
+    id: 'PVTI_ISSUE',
+    title: 'Real issue',
+    type: 'ISSUE',
+    status: '',
+    priority: '',
+    assignees: [],
+    labels: [],
+    createdAt: '',
+    updatedAt: '',
+    body: '',
+    fieldValues: {},
+    content: {
+      type: 'Issue',
+      number: 42,
+      url: 'https://github.com/acme/widgets/issues/42',
+      state: 'open',
+      repository: 'acme/widgets',
+    },
+    ...overrides,
+  };
 }
 
 // ─── GHError ─────────────────────────────────────────────────────────────────
@@ -233,12 +284,65 @@ describe('editItemField — CLI flag per value type', () => {
 describe('editItemTitle', () => {
   beforeEach(() => mockExeca.mockReset());
 
-  it('passes --title to item-edit', async () => {
+  it('draft issue: resolves the DI_ content ID via GraphQL, then edits with it (no --project-id)', async () => {
+    mockExeca
+      .mockResolvedValueOnce(execaOk(JSON.stringify({ data: { node: { content: { id: 'DI_abc' } } } })))
+      .mockResolvedValueOnce(execaOk(''));
+
+    await editItemTitle(draftItem(), 'New Title');
+
+    const editArgs = ghArgsAt(1);
+    expect(editArgs).toContain('--title');
+    expect(editArgs[editArgs.indexOf('--title') + 1]).toBe('New Title');
+    expect(editArgs[editArgs.indexOf('--id') + 1]).toBe('DI_abc');
+    expect(editArgs).not.toContain('--project-id');
+  });
+
+  it('real issue: uses `gh issue edit --title -R <repo>`, not project item-edit', async () => {
     mockExeca.mockResolvedValue(execaOk(''));
-    await editItemTitle('ITEM', 'PROJ', 'New Title');
+    await editItemTitle(issueItem(), 'New Title');
     const args = lastGHArgs();
-    expect(args).toContain('--title');
+    expect(args[0]).toBe('issue');
+    expect(args).toContain('-R');
+    expect(args[args.indexOf('-R') + 1]).toBe('acme/widgets');
     expect(args[args.indexOf('--title') + 1]).toBe('New Title');
+  });
+});
+
+// ─── editItemBody ─────────────────────────────────────────────────────────────
+
+describe('editItemBody', () => {
+  beforeEach(() => mockExeca.mockReset());
+
+  it('draft issue: resolves the DI_ content ID via GraphQL, then edits with it (no --project-id)', async () => {
+    mockExeca
+      .mockResolvedValueOnce(execaOk(JSON.stringify({ data: { node: { content: { id: 'DI_xyz' } } } })))
+      .mockResolvedValueOnce(execaOk(''));
+
+    await editItemBody(draftItem(), 'New body');
+
+    const editArgs = ghArgsAt(1);
+    expect(editArgs).toContain('--body');
+    expect(editArgs[editArgs.indexOf('--body') + 1]).toBe('New body');
+    expect(editArgs[editArgs.indexOf('--id') + 1]).toBe('DI_xyz');
+    expect(editArgs).not.toContain('--project-id');
+  });
+
+  it('real issue: uses `gh issue edit --body -R <repo>`, not project item-edit', async () => {
+    mockExeca.mockResolvedValue(execaOk(''));
+    await editItemBody(issueItem(), 'New body');
+    const args = lastGHArgs();
+    expect(args[0]).toBe('issue');
+    expect(args).toContain('-R');
+    expect(args[args.indexOf('-R') + 1]).toBe('acme/widgets');
+    expect(args[args.indexOf('--body') + 1]).toBe('New body');
+  });
+
+  it('pull request: uses `gh pr edit --body`', async () => {
+    mockExeca.mockResolvedValue(execaOk(''));
+    await editItemBody(issueItem({ type: 'PULL_REQUEST', content: { type: 'PullRequest', number: 7, url: '', state: 'open', repository: 'acme/widgets' } }), 'New body');
+    const args = lastGHArgs();
+    expect(args[0]).toBe('pr');
   });
 });
 
