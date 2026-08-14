@@ -63,6 +63,21 @@ export interface LinkedContent {
   repository: string;
 }
 
+export interface Comment {
+  id: string;
+  author: string;
+  body: string;
+  createdAt: string;
+}
+
+// Raw shape returned by `gh issue view --json comments` / `gh pr view --json comments`
+export interface RawComment {
+  id: string;
+  author?: { login: string };
+  body: string;
+  createdAt: string;
+}
+
 // Raw shapes returned by `gh project item-list --format json`
 export interface RawItem {
   id: string;

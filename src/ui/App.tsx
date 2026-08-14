@@ -12,6 +12,7 @@ import Toast      from './components/Toast.js';
 import Help            from './components/Help.js';
 import CommandPalette  from './components/CommandPalette.js';
 import FilterOverlay   from './components/FilterOverlay.js';
+import CommentsOverlay from './components/CommentsOverlay.js';
 
 import ProjectList from './views/ProjectList.js';
 import ListView    from './views/List.js';
@@ -40,7 +41,9 @@ function AppShell() {
   // Access state/dispatch via context (provider is the parent)
   const { state, dispatch } = React.useContext(AppContext)!;
 
-  const overlayOpen = state.commandPaletteOpen || state.helpOpen || state.filterOverlayOpen;
+  const overlayOpen =
+    state.commandPaletteOpen || state.helpOpen || state.filterOverlayOpen ||
+    state.commentsOverlayOpen;
 
   useInput(
     (input, key) => {
@@ -81,6 +84,14 @@ function AppShell() {
   if (state.helpOpen)            return <Help />;
   if (state.commandPaletteOpen)  return <CommandPalette />;
   if (state.filterOverlayOpen)   return <FilterOverlay />;
+  if (state.commentsOverlayOpen && state.selectedItem) {
+    return (
+      <CommentsOverlay
+        item={state.selectedItem}
+        onClose={() => dispatch({ type: 'TOGGLE_COMMENTS_OVERLAY' })}
+      />
+    );
+  }
 
   return (
     <Box flexDirection="column" height={process.stdout.rows}>

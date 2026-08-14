@@ -10,8 +10,10 @@ import type {
   RawItem,
   RawProject,
   RawField,
+  Comment,
+  RawComment,
 } from './types.js';
-import { normalizeItem, normalizeProject, normalizeField } from './normalize.js';
+import { normalizeItem, normalizeProject, normalizeField, normalizeComment } from './normalize.js';
 
 // ── Debug logging ─────────────────────────────────────────────────────────────
 
@@ -283,17 +285,167 @@ export async function deleteProject(
   await gh(['project', 'delete', String(number), '--owner', owner]);
 }
 
-export async function editItemTitle(
-  itemId: string,
-  projectId: string,
-  title: string,
-): Promise<void> {
+function issueOrPrCommand(item: Item): 'issue' | 'pr' {
+  return item.content?.type === 'PullRequest' ? 'pr' : 'issue';
+}
+
+/**
+ * `gh project item-edit --title/--body` operates on the draft issue's own
+ * content node, not the project item — it must be given the `DI_`-prefixed
+ * draft issue ID, not the item's `PVTI_` ID (gh errors otherwise). Resolve it
+ * via the item's content field.
+ */
+async function resolveDraftIssueContentId(itemId: string): Promise<string> {
+  const query = `
+    query($id: ID!) {
+      node(id: $id) {
+        ... on ProjectV2Item {
+          content { ... on DraftIssue { id } }
+        }
+      }
+    }
+  `;
+  const raw = await gh(['api', 'graphql', '-f', `query=${query}`, '-f', `id=${itemId}`]);
+  const data = raw as { data: { node: { content: { id: string } } | null } };
+  const id = data.data.node?.content?.id;
+  if (!id) throw new Error('Could not resolve draft issue content ID');
+  return id;
+}
+
+export async function editItemTitle(item: Item, title: string): Promise<void> {
+  if (item.type === 'DRAFT_ISSUE') {
+    const draftId = await resolveDraftIssueContentId(item.id);
+    await gh(['project', 'item-edit', '--id', draftId, '--title', title]);
+    return;
+  }
+
+  if (!item.content) throw new Error('Item has no linked issue or pull request');
   await gh([
-    'project', 'item-edit',
-    '--id', itemId,
-    '--project-id', projectId,
+    issueOrPrCommand(item), 'edit', String(item.content.number),
+    '-R', item.content.repository,
     '--title', title,
   ]);
+}
+
+export async function editItemBody(item: Item, body: string): Promise<void> {
+  if (item.type === 'DRAFT_ISSUE') {
+    const draftId = await resolveDraftIssueContentId(item.id);
+    await gh(['project', 'item-edit', '--id', draftId, '--body', body]);
+    return;
+  }
+
+  if (!item.content) throw new Error('Item has no linked issue or pull request');
+  await gh([
+    issueOrPrCommand(item), 'edit', String(item.content.number),
+    '-R', item.content.repository,
+    '--body', body,
+  ]);
+}
+
+export async function listComments(item: Item): Promise<Comment[]> {
+  if (!item.content) return [];
+  const raw = await gh([
+    issueOrPrCommand(item), 'view', String(item.content.number),
+    '-R', item.content.repository,
+    '--json', 'comments',
+  ]);
+  const data = raw as { comments: RawComment[] };
+  return data.comments.map(normalizeComment);
+}
+
+export async function addComment(item: Item, body: string): Promise<void> {
+  if (!item.content) throw new Error('Item has no linked issue or pull request');
+  await gh([
+    issueOrPrCommand(item), 'comment', String(item.content.number),
+    '-R', item.content.repository,
+    '--body', body,
+  ]);
+}
+
+export interface ProjectRepository {
+  id: string;
+  nameWithOwner: string;
+}
+
+export async function listProjectRepositories(
+  projectId: string,
+): Promise<ProjectRepository[]> {
+  const query = `
+    query($id: ID!) {
+      node(id: $id) {
+        ... on ProjectV2 {
+          repositories(first: 100) {
+            nodes { id nameWithOwner }
+          }
+        }
+      }
+    }
+  `;
+
+  const raw = await gh(['api', 'graphql', '-f', `query=${query}`, '-f', `id=${projectId}`]);
+  const data = raw as {
+    data: { node: { repositories: { nodes: ProjectRepository[] } } | null };
+  };
+  return data.data.node?.repositories.nodes ?? [];
+}
+
+export async function convertDraftToIssue(
+  item: Item,
+  repoId: string,
+): Promise<Item> {
+  const mutation = `
+    mutation($itemId: ID!, $repoId: ID!) {
+      convertProjectV2DraftIssueItemToIssue(
+        input: { itemId: $itemId, repositoryId: $repoId }
+      ) {
+        item {
+          content {
+            ... on Issue {
+              number
+              url
+              state
+              repository { nameWithOwner }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const raw = await gh([
+    'api', 'graphql',
+    '-f', `query=${mutation}`,
+    '-f', `itemId=${item.id}`,
+    '-f', `repoId=${repoId}`,
+  ]);
+
+  const data = raw as {
+    data: {
+      convertProjectV2DraftIssueItemToIssue: {
+        item: {
+          content: {
+            number: number;
+            url: string;
+            state: string;
+            repository: { nameWithOwner: string };
+          };
+        };
+      };
+    };
+  };
+  const content = data.data.convertProjectV2DraftIssueItemToIssue.item.content;
+
+  return {
+    ...item,
+    type: 'ISSUE',
+    content: {
+      type: 'Issue',
+      number: content.number,
+      url: content.url,
+      state: content.state,
+      repository: content.repository.nameWithOwner,
+    },
+  };
 }
 
 export async function openInBrowser(url: string): Promise<void> {

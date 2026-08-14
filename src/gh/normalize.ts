@@ -6,6 +6,8 @@ import type {
   RawItem,
   RawProject,
   RawField,
+  Comment,
+  RawComment,
 } from './types.js';
 
 export function normalizeProject(raw: RawProject): Project {
@@ -64,10 +66,21 @@ export function normalizeItem(raw: RawItem): Item {
     ? raw.labels
     : (raw.labels?.nodes ?? []);
 
+  // `gh project item-list` doesn't populate the top-level `type` field in
+  // current versions of the CLI — it's only ever present on `content`. Derive
+  // the item type from content when `raw.type` is absent, so real issues/PRs
+  // aren't misclassified as drafts.
+  const contentType: string | undefined = raw.content?.__typename ?? raw.content?.type;
+  const derivedType: Item['type'] =
+    raw.type ??
+    (contentType === 'PullRequest' ? 'PULL_REQUEST'
+      : contentType === 'Issue' ? 'ISSUE'
+      : 'DRAFT_ISSUE');
+
   const base: Item = {
     id: raw.id,
     title: raw.title,
-    type: raw.type ?? 'DRAFT_ISSUE',
+    type: derivedType,
     // gh CLI returns option names as flat strings; resolved to option IDs in the UI
     status: raw.status ?? '',
     priority: raw.priority ?? '',
@@ -79,22 +92,28 @@ export function normalizeItem(raw: RawItem): Item {
     fieldValues,
   };
 
-  if (raw.content) {
+  if (raw.content && contentType && contentType !== 'DraftIssue') {
     const repo = raw.content.repository;
     const repoName = typeof repo === 'string'
       ? repo
       : (repo?.nameWithOwner ?? '');
-    const contentType: string | undefined = raw.content.__typename ?? raw.content.type;
-    if (contentType && contentType !== 'DraftIssue') {
-      base.content = {
-        type: contentType as 'Issue' | 'PullRequest',
-        number: raw.content.number ?? 0,
-        url: raw.content.url ?? '',
-        state: raw.content.state ?? '',
-        repository: repoName,
-      };
-    }
+    base.content = {
+      type: contentType as 'Issue' | 'PullRequest',
+      number: raw.content.number ?? 0,
+      url: raw.content.url ?? '',
+      state: raw.content.state ?? '',
+      repository: repoName,
+    };
   }
 
   return base;
+}
+
+export function normalizeComment(raw: RawComment): Comment {
+  return {
+    id: raw.id,
+    author: raw.author?.login ?? 'unknown',
+    body: raw.body,
+    createdAt: raw.createdAt,
+  };
 }

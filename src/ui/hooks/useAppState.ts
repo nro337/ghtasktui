@@ -51,6 +51,7 @@ export interface AppState {
   sidebarOpen: boolean;
   commandPaletteOpen: boolean;
   helpOpen: boolean;
+  commentsOverlayOpen: boolean;
   loading: boolean;
   toast: { message: string; kind: 'info' | 'success' | 'error' } | null;
   config: Config;
@@ -76,6 +77,7 @@ export type AppAction =
   | { type: 'TOGGLE_SIDEBAR' }
   | { type: 'TOGGLE_COMMAND_PALETTE' }
   | { type: 'TOGGLE_HELP' }
+  | { type: 'TOGGLE_COMMENTS_OVERLAY' }
   | { type: 'SET_LOADING'; loading: boolean }
   | { type: 'SHOW_TOAST'; message: string; kind: 'info' | 'success' | 'error' }
   | { type: 'CLEAR_TOAST' }
@@ -135,6 +137,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'TOGGLE_HELP':
       return { ...state, helpOpen: !state.helpOpen };
+
+    case 'TOGGLE_COMMENTS_OVERLAY':
+      return { ...state, commentsOverlayOpen: !state.commentsOverlayOpen };
 
     case 'SET_PROJECTS':
       return { ...state, projects: action.projects, projectsLoaded: true };
@@ -248,6 +253,7 @@ export function initialState(config: Config): AppState {
     sidebarOpen: true,
     commandPaletteOpen: false,
     helpOpen: false,
+    commentsOverlayOpen: false,
     loading: false,
     toast: null,
     config,

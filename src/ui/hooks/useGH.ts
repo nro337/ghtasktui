@@ -1,6 +1,6 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import * as client from '../../gh/client.js';
-import type { Item, Field, FieldValue } from '../../gh/types.js';
+import type { Item, Field, FieldValue, Comment } from '../../gh/types.js';
 import { useAppContext, useProjectCache } from './useAppState.js';
 
 const PAGE_SIZE = 25;
@@ -190,9 +190,8 @@ export function useItemMutations(projectNumber: number) {
 
   const editTitle = useCallback(
     async (item: Item, title: string): Promise<boolean> => {
-      if (!state.activeProject) return false;
       try {
-        await client.editItemTitle(item.id, state.activeProject.id, title);
+        await client.editItemTitle(item, title);
         const updated: Item = { ...item, title };
         dispatch({ type: 'UPSERT_ITEM', projectNumber, item: updated });
         return true;
@@ -201,8 +200,109 @@ export function useItemMutations(projectNumber: number) {
         return false;
       }
     },
-    [state.activeProject, projectNumber, dispatch],
+    [projectNumber, dispatch],
   );
 
-  return { createItem, deleteItem, editField, editTitle };
+  const editBody = useCallback(
+    async (item: Item, body: string): Promise<boolean> => {
+      try {
+        await client.editItemBody(item, body);
+        const updated: Item = { ...item, body };
+        dispatch({ type: 'UPSERT_ITEM', projectNumber, item: updated });
+        return true;
+      } catch (err) {
+        dispatch({ type: 'SHOW_TOAST', message: String(err), kind: 'error' });
+        return false;
+      }
+    },
+    [projectNumber, dispatch],
+  );
+
+  const convertToIssue = useCallback(
+    async (item: Item, repo: client.ProjectRepository): Promise<boolean> => {
+      try {
+        const updated = await client.convertDraftToIssue(item, repo.id);
+        dispatch({ type: 'UPSERT_ITEM', projectNumber, item: updated });
+        dispatch({
+          type: 'SHOW_TOAST',
+          message: `Converted to issue in ${repo.nameWithOwner}`,
+          kind: 'success',
+        });
+        return true;
+      } catch (err) {
+        dispatch({ type: 'SHOW_TOAST', message: String(err), kind: 'error' });
+        return false;
+      }
+    },
+    [projectNumber, dispatch],
+  );
+
+  return { createItem, deleteItem, editField, editTitle, editBody, convertToIssue };
+}
+
+export function useProjectRepositories(projectId: string | undefined) {
+  const { dispatch } = useAppContext();
+  const [repositories, setRepositories] = useState<client.ProjectRepository[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const inflightRef = useRef(false);
+
+  const load = useCallback(async () => {
+    if (inflightRef.current || !projectId) return;
+    inflightRef.current = true;
+    setLoading(true);
+    try {
+      const result = await client.listProjectRepositories(projectId);
+      setRepositories(result);
+      setLoaded(true);
+    } catch (err) {
+      dispatch({ type: 'SHOW_TOAST', message: String(err), kind: 'error' });
+    } finally {
+      inflightRef.current = false;
+      setLoading(false);
+    }
+  }, [projectId, dispatch]);
+
+  return { repositories, repositoriesLoaded: loaded, repositoriesLoading: loading, loadRepositories: load };
+}
+
+export function useComments(item: Item) {
+  const { dispatch } = useAppContext();
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const inflightRef = useRef(false);
+
+  const load = useCallback(async () => {
+    if (inflightRef.current) return;
+    inflightRef.current = true;
+    setLoading(true);
+    try {
+      const result = await client.listComments(item);
+      setComments(result);
+      setLoaded(true);
+    } catch (err) {
+      dispatch({ type: 'SHOW_TOAST', message: String(err), kind: 'error' });
+    } finally {
+      inflightRef.current = false;
+      setLoading(false);
+    }
+  }, [item, dispatch]);
+
+  const addComment = useCallback(
+    async (body: string): Promise<boolean> => {
+      try {
+        await client.addComment(item, body);
+        dispatch({ type: 'SHOW_TOAST', message: 'Comment added', kind: 'success' });
+        await load();
+        return true;
+      } catch (err) {
+        dispatch({ type: 'SHOW_TOAST', message: String(err), kind: 'error' });
+        return false;
+      }
+    },
+    [item, dispatch, load],
+  );
+
+  return { comments, commentsLoaded: loaded, commentsLoading: loading, loadComments: load, addComment };
 }
