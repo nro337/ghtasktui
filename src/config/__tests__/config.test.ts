@@ -5,10 +5,27 @@ vi.mock('cosmiconfig', () => ({
   cosmiconfig: vi.fn(),
 }));
 
+// Mock the filesystem and homedir so saveConfig never touches the real
+// machine — assertions below inspect what *would* have been written.
+vi.mock('node:fs/promises', () => ({
+  default: {
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+vi.mock('node:os', () => ({
+  default: { homedir: () => '/fake/home' },
+}));
+
 import { cosmiconfig } from 'cosmiconfig';
-import { loadConfig, defaultConfig } from '../config.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { loadConfig, saveConfig, defaultConfig, type Config } from '../config.js';
 
 const mockCosmiconfig = vi.mocked(cosmiconfig);
+const mockMkdir = vi.mocked(fs.mkdir);
+const mockWriteFile = vi.mocked(fs.writeFile);
+const EXPECTED_CONFIG_PATH = path.join('/fake/home', '.config', 'ghtasktui', 'config.json');
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -17,7 +34,11 @@ function mockExplorer(result: { config: unknown; isEmpty?: boolean } | null) {
   return { search: vi.fn().mockResolvedValue(result) };
 }
 
-beforeEach(() => mockCosmiconfig.mockReset());
+beforeEach(() => {
+  mockCosmiconfig.mockReset();
+  mockMkdir.mockClear();
+  mockWriteFile.mockClear();
+});
 
 // ─── defaultConfig ────────────────────────────────────────────────────────────
 
@@ -144,5 +165,76 @@ describe('loadConfig — isolation', () => {
 
     await loadConfig();
     expect(defaultConfig.general.defaultOwner).toBe('@me');
+  });
+});
+
+// ─── saveConfig ────────────────────────────────────────────────────────────
+
+describe('saveConfig', () => {
+  it('creates the config directory before writing', async () => {
+    await saveConfig(defaultConfig);
+    expect(mockMkdir).toHaveBeenCalledWith(
+      path.dirname(EXPECTED_CONFIG_PATH),
+      { recursive: true },
+    );
+  });
+
+  it('writes to ~/.config/ghtasktui/config.json', async () => {
+    await saveConfig(defaultConfig);
+    expect(mockWriteFile).toHaveBeenCalledTimes(1);
+    const [writtenPath] = mockWriteFile.mock.calls[0]!;
+    expect(writtenPath).toBe(EXPECTED_CONFIG_PATH);
+  });
+
+  it('writes valid JSON containing the full config, including appearance changes', async () => {
+    const withNewTheme: Config = {
+      ...defaultConfig,
+      appearance: { ...defaultConfig.appearance, theme: 'solarized', highContrastText: true },
+    };
+    await saveConfig(withNewTheme);
+
+    const [, written] = mockWriteFile.mock.calls[0]!;
+    const parsed = JSON.parse(written as string);
+    expect(parsed).toEqual(withNewTheme);
+  });
+
+  it('mkdir runs before writeFile (directory must exist first)', async () => {
+    const order: string[] = [];
+    mockMkdir.mockImplementationOnce(async () => { order.push('mkdir'); return undefined; });
+    mockWriteFile.mockImplementationOnce(async () => { order.push('writeFile'); return undefined; });
+
+    await saveConfig(defaultConfig);
+    expect(order).toEqual(['mkdir', 'writeFile']);
+  });
+
+  it('propagates a write failure instead of silently swallowing it', async () => {
+    mockWriteFile.mockRejectedValueOnce(new Error('EACCES: permission denied'));
+    await expect(saveConfig(defaultConfig)).rejects.toThrow('EACCES');
+  });
+});
+
+// ─── saveConfig → loadConfig round trip (persistence across sessions) ───────
+
+describe('saveConfig then loadConfig — persists across a simulated restart', () => {
+  it('a saved theme/high-contrast choice is what the next loadConfig() returns', async () => {
+    const changed: Config = {
+      ...defaultConfig,
+      appearance: { ...defaultConfig.appearance, theme: 'solarized', highContrastText: true },
+    };
+
+    // "Save" during this session.
+    await saveConfig(changed);
+    const [, written] = mockWriteFile.mock.calls[0]!;
+
+    // Simulate the next launch: cosmiconfig reads back exactly what was
+    // written to disk.
+    mockCosmiconfig.mockReturnValue(
+      mockExplorer({ config: JSON.parse(written as string) }) as unknown as ReturnType<typeof cosmiconfig>,
+    );
+    const reloaded = await loadConfig();
+
+    expect(reloaded.appearance.theme).toBe('solarized');
+    expect(reloaded.appearance.highContrastText).toBe(true);
+    expect(reloaded).toEqual(changed);
   });
 });

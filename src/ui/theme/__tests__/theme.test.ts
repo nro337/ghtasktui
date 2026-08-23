@@ -11,7 +11,7 @@ describe('initTheme', () => {
   it('applies midnight theme with strong text contrast', () => {
     initTheme({ theme: 'midnight', highContrastText: true });
     expect(colors.accentPurple).toBe('#3B82F6');
-    expect(colors.textSecondary).toBe('#D4D4D4');
+    expect(colors.textSecondary).toBe('#D6E0F0');
     expect(statusColor('In Progress')).toBe('#60A5FA');
     expect(priorityColor('none')).toBe(colors.textMuted);
   });

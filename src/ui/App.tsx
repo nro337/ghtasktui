@@ -1,4 +1,4 @@
-import React, { useReducer } from 'react';
+import React, { useLayoutEffect, useReducer } from 'react';
 import { Box, useInput } from 'ink';
 import { AppContext, appReducer, initialState, type AppView } from './hooks/useAppState.js';
 import { matchKey, DEFAULT_KEYMAP } from './hooks/useKeymap.js';
@@ -111,16 +111,12 @@ function AppShell() {
 }
 
 export default function App({ config, debug: _debug }: Props) {
-  const themeInitializedRef = React.useRef(false);
-  if (!themeInitializedRef.current) {
-    initTheme({
-      theme: config.appearance.theme,
-      highContrastText: config.appearance.highContrastText,
-    });
-    themeInitializedRef.current = true;
-  }
-
   const [state, dispatch] = useReducer(appReducer, config, initialState);
+
+  const { theme, highContrastText } = state.config.appearance;
+  useLayoutEffect(() => {
+    initTheme({ theme, highContrastText });
+  }, [theme, highContrastText]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>
