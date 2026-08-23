@@ -39,7 +39,9 @@ export default function ListView() {
   const { fields, fieldsLoaded, loadFields } = useFieldsLoader(projectNumber);
   const { deleteItem, editField, editTitle } = useItemMutations(projectNumber);
 
-  // Load lazily on mount (stable ref pattern avoids effect re-firing)
+  // Load lazily on mount, and again whenever the active project changes
+  // (stable ref pattern avoids the effect re-firing when loadItems/loadFields
+  // identity changes due to cache updates)
   const loadItemsRef = useRef(loadItems);
   const loadFieldsRef = useRef(loadFields);
   loadItemsRef.current = loadItems;
@@ -47,7 +49,7 @@ export default function ListView() {
   useEffect(() => {
     void loadItemsRef.current();
     void loadFieldsRef.current();
-  }, []);
+  }, [projectNumber]);
 
   const statusField   = useMemo(() => findField(fields, 'Status'),   [fields]);
   const priorityField = useMemo(() => findField(fields, 'Priority'), [fields]);
