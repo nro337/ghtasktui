@@ -33,6 +33,7 @@ export default function ListView() {
   const state = useAppState();
   const { dispatch } = useAppContext();
   const icons = getIcons(state.config.appearance.nerdFonts);
+  const showGrid = state.config.appearance.showGrid;
 
   const projectNumber = state.activeProject?.number ?? 0;
   const { items, itemsLoaded, hasNextPage, loadItems, refresh } = useItemsLoader(projectNumber);
@@ -83,13 +84,17 @@ export default function ListView() {
   const termHeight = process.stdout.rows;
   // Reserve rows for header (1) + statusbar (1) + picker/form at bottom (~5) + padding
   const listHeight = Math.max(5, termHeight - 7);
+  // Grid mode draws a border line under every row, so each row consumes two
+  // terminal lines instead of one — halve the row budget or the rendered
+  // content overflows the terminal and Ink's redraw leaves stale lines behind.
+  const visibleRowCount = showGrid ? Math.max(1, Math.floor(listHeight / 2)) : listHeight;
   useEffect(() => {
     if (effectiveCursor < scrollOffset) {
       setScrollOffset(effectiveCursor);
-    } else if (effectiveCursor >= scrollOffset + listHeight) {
-      setScrollOffset(effectiveCursor - listHeight + 1);
+    } else if (effectiveCursor >= scrollOffset + visibleRowCount) {
+      setScrollOffset(effectiveCursor - visibleRowCount + 1);
     }
-  }, [effectiveCursor, scrollOffset, listHeight]);
+  }, [effectiveCursor, scrollOffset, visibleRowCount]);
 
   const selectedRow = rows[effectiveCursor];
   const selectedItem: Item | null =
@@ -296,7 +301,7 @@ export default function ListView() {
     );
   }
 
-  const visibleRows = rows.slice(scrollOffset, scrollOffset + listHeight);
+  const visibleRows = rows.slice(scrollOffset, scrollOffset + visibleRowCount);
 
   return (
     <Box flexGrow={1} flexDirection="row">
@@ -314,6 +319,7 @@ export default function ListView() {
                 isCursor={isCursor}
                 collapsed={collapsed.has(row.key)}
                 icons={icons}
+                showGrid={showGrid}
               />
             );
           }
@@ -328,6 +334,7 @@ export default function ListView() {
               priorityField={priorityField}
               fields={fields}
               icons={icons}
+              showGrid={showGrid}
               isEditing={isInlineEdit}
               editDraft={editDraft}
               onEditChange={setEditDraft}
@@ -458,15 +465,26 @@ function GroupHeader({
   isCursor,
   collapsed,
   icons,
+  showGrid,
 }: {
   row: Extract<FlatRow, { kind: 'header' }>;
   isCursor: boolean;
   collapsed: boolean;
   icons: ReturnType<typeof getIcons>;
+  showGrid: boolean;
 }) {
   const labelColor = row.color ? `#${row.color}` : colors.textMuted;
   return (
-    <Box gap={1} paddingLeft={1}>
+    <Box
+      gap={1}
+      paddingLeft={1}
+      borderStyle={showGrid ? 'single' : undefined}
+      borderColor={colors.border}
+      borderTop={false}
+      borderLeft={false}
+      borderRight={false}
+      borderBottom={showGrid}
+    >
       <Text color={isCursor ? colors.accentPurple : colors.textMuted}>
         {collapsed ? icons.chevronRight : icons.chevronDown}
       </Text>
@@ -483,6 +501,7 @@ function ItemRow({
   priorityField,
   fields: _fields,
   icons,
+  showGrid,
   isEditing,
   editDraft,
   onEditChange,
@@ -495,6 +514,7 @@ function ItemRow({
   priorityField: Field | undefined;
   fields: Field[];
   icons: ReturnType<typeof getIcons>;
+  showGrid: boolean;
   isEditing: boolean;
   editDraft: string;
   onEditChange: (v: string) => void;
@@ -513,11 +533,19 @@ function ItemRow({
   const dateStr = relativeTime(item.updatedAt);
   const assignee = item.assignees[0]?.login ?? '';
 
+  const Div = () => (showGrid ? <Text color={colors.border}>│</Text> : null);
+
   return (
     <Box
       gap={1}
       paddingLeft={1}
       paddingRight={1}
+      borderStyle={showGrid ? 'single' : undefined}
+      borderColor={colors.border}
+      borderTop={false}
+      borderLeft={false}
+      borderRight={false}
+      borderBottom={showGrid}
     >
       {/* Cursor indicator */}
       <Text color={isCursor ? colors.accentPurpleLight : 'transparent'}>{isCursor ? '▶' : ' '}</Text>
@@ -526,16 +554,19 @@ function ItemRow({
       <Box width={2}>
         <Text color={priorityTone}>{priorityIcon}</Text>
       </Box>
+      <Div />
 
       {/* Type */}
       <Box width={1}>
         <Text color={isCursor ? colors.textSecondary : colors.textMuted}>{typeIcon}</Text>
       </Box>
+      <Div />
 
       {/* ID */}
       <Box width={6}>
         <Text color={isCursor ? colors.textSecondary : colors.textMuted}>{idStr}</Text>
       </Box>
+      <Div />
 
       {/* Title (grows) */}
       <Box flexGrow={1} overflow="hidden">
@@ -555,6 +586,7 @@ function ItemRow({
           </Text>
         )}
       </Box>
+      <Div />
 
       {/* Status */}
       <Box width={12}>
@@ -562,6 +594,7 @@ function ItemRow({
           {statusOption?.name ?? ''}
         </Text>
       </Box>
+      <Div />
 
       {/* Assignee */}
       <Box width={10}>
@@ -569,6 +602,7 @@ function ItemRow({
           {assignee ? `@${assignee.slice(0, 8)}` : ''}
         </Text>
       </Box>
+      <Div />
 
       {/* Date */}
       <Box width={4}>

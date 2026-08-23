@@ -5,8 +5,8 @@ import { saveConfig, type Config } from '../../config/config.js';
 import { colors, THEME_NAMES, THEME_LABELS, type ThemeName } from '../theme/theme.js';
 import SelectPicker from '../components/SelectPicker.js';
 
-type SettingsField = 'theme' | 'highContrast';
-const FOCUSABLE_FIELDS: SettingsField[] = ['theme', 'highContrast'];
+type SettingsField = 'theme' | 'highContrast' | 'grid';
+const FOCUSABLE_FIELDS: SettingsField[] = ['theme', 'highContrast', 'grid'];
 
 export default function Settings() {
   const state = useAppState();
@@ -53,6 +53,9 @@ export default function Settings() {
         } else if (focused === 'highContrast') {
           const next = !state.config.appearance.highContrastText;
           persist({ highContrastText: next }, `High contrast ${next ? 'on' : 'off'} — saved`);
+        } else if (focused === 'grid') {
+          const next = !state.config.appearance.showGrid;
+          persist({ showGrid: next }, `Grid lines ${next ? 'on' : 'off'} — saved`);
         }
       }
     },
@@ -90,6 +93,12 @@ export default function Settings() {
         <FocusRow label="High contrast" focused={focused === 'highContrast'}>
           <Text color={colors.textPrimary}>
             {state.config.appearance.highContrastText ? 'On' : 'Off'}
+          </Text>
+        </FocusRow>
+
+        <FocusRow label="Show grid" focused={focused === 'grid'}>
+          <Text color={colors.textPrimary}>
+            {state.config.appearance.showGrid ? 'On' : 'Off'}
           </Text>
         </FocusRow>
 
