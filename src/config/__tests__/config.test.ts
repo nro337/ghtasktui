@@ -55,6 +55,7 @@ describe('defaultConfig', () => {
     expect(defaultConfig.appearance.nerdFonts).toBe(false);
     expect(defaultConfig.appearance.sidebarWidth).toBe(22);
     expect(defaultConfig.appearance.detailPanelRatio).toBe(0.4);
+    expect(defaultConfig.appearance.showGrid).toBe(false);
   });
 
   it('has empty keybindings and projects', () => {
@@ -141,7 +142,7 @@ describe('loadConfig — full config file', () => {
   it('replaces all fields when all sections are provided', async () => {
     const full = {
       general: { defaultOwner: 'acme', defaultView: 'board' as const, refreshInterval: 60000 },
-      appearance: { theme: 'midnight' as const, highContrastText: true, nerdFonts: true, sidebarWidth: 30, detailPanelRatio: 0.6 },
+      appearance: { theme: 'midnight' as const, highContrastText: true, nerdFonts: true, sidebarWidth: 30, detailPanelRatio: 0.6, showGrid: true },
       keybindings: { quit: 'x', help: 'h' },
       projects: { 'acme/api': { defaultView: 'list' as const } },
     };

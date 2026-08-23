@@ -16,6 +16,7 @@ export interface Config {
     nerdFonts: boolean;
     sidebarWidth: number;
     detailPanelRatio: number;
+    showGrid: boolean;
   };
   keybindings: Record<string, string>;
   projects: Record<string, { defaultView?: 'list' | 'board' }>;
@@ -33,6 +34,7 @@ export const defaultConfig: Config = {
     nerdFonts: false,
     sidebarWidth: 22,
     detailPanelRatio: 0.4,
+    showGrid: false,
   },
   keybindings: {},
   projects: {},
