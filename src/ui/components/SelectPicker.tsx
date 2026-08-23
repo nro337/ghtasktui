@@ -14,6 +14,7 @@ interface Props {
   currentId?: string | undefined;
   onSelect: (option: PickerOption) => void;
   onCancel: () => void;
+  onHighlight?: (option: PickerOption) => void;
   isActive?: boolean;
 }
 
@@ -23,6 +24,7 @@ export default function SelectPicker({
   currentId,
   onSelect,
   onCancel,
+  onHighlight,
   isActive = true,
 }: Props) {
   const [idx, setIdx] = useState(() => {
@@ -32,8 +34,18 @@ export default function SelectPicker({
 
   useInput(
     (input, key) => {
-      if (key.upArrow)   setIdx(i => Math.max(0, i - 1));
-      if (key.downArrow) setIdx(i => Math.min(options.length - 1, i + 1));
+      if (key.upArrow) {
+        const next = Math.max(0, idx - 1);
+        setIdx(next);
+        const opt = options[next];
+        if (opt) onHighlight?.(opt);
+      }
+      if (key.downArrow) {
+        const next = Math.min(options.length - 1, idx + 1);
+        setIdx(next);
+        const opt = options[next];
+        if (opt) onHighlight?.(opt);
+      }
       if (key.return) {
         const opt = options[idx];
         if (opt) onSelect(opt);

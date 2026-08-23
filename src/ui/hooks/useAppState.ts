@@ -102,7 +102,8 @@ export type AppAction =
     }
   | { type: 'UPSERT_ITEM'; projectNumber: number; item: Item }
   | { type: 'REMOVE_ITEM'; projectNumber: number; itemId: string }
-  | { type: 'SET_OWNER'; owner: string };
+  | { type: 'SET_OWNER'; owner: string }
+  | { type: 'SET_APPEARANCE'; appearance: Partial<Config['appearance']> };
 
 function emptyProjectCache(): ProjectCache {
   return {
@@ -128,6 +129,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'SET_OWNER':
       return { ...state, owner: action.owner };
+
+    case 'SET_APPEARANCE':
+      return {
+        ...state,
+        config: {
+          ...state.config,
+          appearance: { ...state.config.appearance, ...action.appearance },
+        },
+      };
 
     case 'TOGGLE_SIDEBAR':
       return { ...state, sidebarOpen: !state.sidebarOpen };
