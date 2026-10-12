@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-10-12
+- Added focus highlight: an optional solid background on the focused row across all views, with 10 preset colors or a custom hex color (toggle and color picker in settings)
+- Added `T` key to show or hide the detail panel in list view; the panel now stays in place on group header rows
+- Fixed settings rows overlapping on short terminals
+
 ## [0.6.0] - 2026-08-23
 - Add togglable grid option to settings menu for board view
 
