@@ -2,9 +2,10 @@ import React, { useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useAppContext, useAppState } from '../hooks/useAppState.js';
 import { useProjectsLoader } from '../hooks/useGH.js';
-import { colors } from '../theme/theme.js';
+import { colors, focus } from '../theme/theme.js';
 import { getIcons } from '../theme/icons.js';
 import Spinner from '../components/Spinner.js';
+import FocusFill from '../components/FocusFill.js';
 
 export default function ProjectList() {
   const state = useAppState();
@@ -66,6 +67,21 @@ export default function ProjectList() {
 
       {projects.map((project, idx) => {
         const isSelected = idx === selectedIdx;
+        if (isSelected && focus.enabled) {
+          return (
+            <Box key={project.number}>
+              <FocusFill width={1} />
+              <FocusFill width={6} text={`${icons.arrowRight} ${project.number}`} />
+              <FocusFill width={3} />
+              <FocusFill text={project.title} />
+              <FocusFill width={3} />
+              <FocusFill width={40} text={project.shortDescription ? project.shortDescription.slice(0, 38) : '—'} />
+              <FocusFill width={3} />
+              <FocusFill width={8} text={project.closed ? 'closed' : 'open'} />
+              <FocusFill width={1} />
+            </Box>
+          );
+        }
         return (
           <Box
             key={project.number}

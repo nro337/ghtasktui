@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
-import { colors } from '../theme/theme.js';
+import { colors, focus } from '../theme/theme.js';
+import { FocusLine } from './FocusFill.js';
 
 export interface PickerOption {
   id: string;
@@ -16,6 +17,8 @@ interface Props {
   onCancel: () => void;
   onHighlight?: (option: PickerOption) => void;
   isActive?: boolean;
+  /** Show at most this many options at once, scrolling to follow the cursor. */
+  maxVisible?: number;
 }
 
 export default function SelectPicker({
@@ -26,6 +29,7 @@ export default function SelectPicker({
   onCancel,
   onHighlight,
   isActive = true,
+  maxVisible,
 }: Props) {
   const [idx, setIdx] = useState(() => {
     const i = options.findIndex(o => o.id === currentId);
@@ -63,15 +67,37 @@ export default function SelectPicker({
     );
   }
 
+  // Window the list around the cursor when it is taller than maxVisible.
+  const visibleCount = Math.max(1, Math.min(maxVisible ?? options.length, options.length));
+  const windowed = visibleCount < options.length;
+  const start = Math.max(0, Math.min(idx - Math.floor(visibleCount / 2), options.length - visibleCount));
+
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={colors.borderFocus} paddingX={1}>
-      <Box marginBottom={1}>
+    <Box
+      flexDirection="column"
+      flexShrink={0}
+      borderStyle="round"
+      borderColor={colors.borderFocus}
+      paddingX={1}
+    >
+      <Box marginBottom={1} flexShrink={0}>
         <Text color={colors.textMuted}>{title}</Text>
       </Box>
-      {options.map((opt, i) => {
+      {options.slice(start, start + visibleCount).map((opt, visIdx) => {
+        const i = start + visIdx;
         const isSelected = i === idx;
+        if (isSelected && focus.enabled) {
+          return (
+            <FocusLine key={opt.id}>
+              {'› '}
+              {opt.color !== undefined && <Text color={`#${opt.color}`}>{'● '}</Text>}
+              {opt.name}
+              {opt.id === currentId ? '  ✓' : ''}
+            </FocusLine>
+          );
+        }
         return (
-          <Box key={opt.id} gap={1}>
+          <Box key={opt.id} gap={1} flexShrink={0}>
             <Text color={isSelected ? colors.accentPurple : colors.textMuted}>
               {isSelected ? '›' : ' '}
             </Text>
@@ -87,8 +113,10 @@ export default function SelectPicker({
           </Box>
         );
       })}
-      <Box marginTop={1}>
-        <Text color={colors.textMuted}>↑↓ navigate  Enter select  Esc cancel</Text>
+      <Box marginTop={1} flexShrink={0}>
+        <Text color={colors.textMuted}>
+          ↑↓ navigate  Enter select  Esc cancel{windowed ? `  (${idx + 1}/${options.length})` : ''}
+        </Text>
       </Box>
     </Box>
   );

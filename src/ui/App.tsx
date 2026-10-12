@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useReducer } from 'react';
+import React, { useMemo, useReducer } from 'react';
 import { Box, useInput } from 'ink';
 import { AppContext, appReducer, initialState, type AppView } from './hooks/useAppState.js';
 import { matchKey, DEFAULT_KEYMAP } from './hooks/useKeymap.js';
@@ -113,10 +113,12 @@ function AppShell() {
 export default function App({ config, debug: _debug }: Props) {
   const [state, dispatch] = useReducer(appReducer, config, initialState);
 
-  const { theme, highContrastText } = state.config.appearance;
-  useLayoutEffect(() => {
-    initTheme({ theme, highContrastText });
-  }, [theme, highContrastText]);
+  const { theme, highContrastText, focusHighlight, focusHighlightColor } = state.config.appearance;
+  // Applied during render (not in an effect) so children read the new palette
+  // in the same pass — otherwise live previews in Settings lag one keypress.
+  useMemo(() => {
+    initTheme({ theme, highContrastText, focusHighlight, focusHighlightColor });
+  }, [theme, highContrastText, focusHighlight, focusHighlightColor]);
 
   return (
     <AppContext.Provider value={{ state, dispatch }}>

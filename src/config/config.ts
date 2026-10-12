@@ -13,6 +13,8 @@ export interface Config {
   appearance: {
     theme: ThemeName;
     highContrastText: boolean;
+    focusHighlight: boolean;
+    focusHighlightColor: string;
     nerdFonts: boolean;
     sidebarWidth: number;
     detailPanelRatio: number;
@@ -31,6 +33,8 @@ export const defaultConfig: Config = {
   appearance: {
     theme: 'dark',
     highContrastText: false,
+    focusHighlight: false,
+    focusHighlightColor: '#7C3AED',
     nerdFonts: false,
     sidebarWidth: 22,
     detailPanelRatio: 0.4,

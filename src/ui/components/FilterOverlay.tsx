@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useAppContext } from '../hooks/useAppState.js';
-import { colors } from '../theme/theme.js';
+import { colors, focus } from '../theme/theme.js';
 import { findField } from '../utils/fields.js';
 import { truncate } from '../utils/text.js';
 import type { Item } from '../../gh/types.js';
@@ -184,6 +184,16 @@ function Section({
           const isCursor = absIdx === cursor;
           const active = isActive(opt);
           const optColor = opt.color ? `#${opt.color}` : undefined;
+
+          // Options flow inline, so the highlight hugs the option itself.
+          if (isCursor && focus.enabled) {
+            return (
+              <Text key={opt.id} color={focus.fg} backgroundColor={focus.bg} bold>
+                {`› ${active ? '[✓]' : '[ ]'} `}
+                <Text {...(optColor ? { color: optColor } : {})}>{truncate(opt.label, 14)}</Text>
+              </Text>
+            );
+          }
 
           return (
             <Box key={opt.id} gap={1}>

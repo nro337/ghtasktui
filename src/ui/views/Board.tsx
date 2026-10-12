@@ -6,7 +6,7 @@ import {
   useFieldsLoader,
   useItemMutations,
 } from '../hooks/useGH.js';
-import { colors, priorityColor } from '../theme/theme.js';
+import { colors, focus, priorityColor } from '../theme/theme.js';
 import { getIcons } from '../theme/icons.js';
 import {
   findField,
@@ -21,6 +21,7 @@ import { hasActiveFilters } from '../hooks/useAppState.js';
 import * as client from '../../gh/client.js';
 import SelectPicker from '../components/SelectPicker.js';
 import InlineTextInput from '../components/InlineTextInput.js';
+import { FocusLine } from '../components/FocusFill.js';
 import Spinner from '../components/Spinner.js';
 import type { Item, Field, FieldValue } from '../../gh/types.js';
 
@@ -490,6 +491,27 @@ function KanbanCard({
   const cursorChar  = isSelected && isActiveCol ? '▶' : ' ';
   const titleColor  = isSelected && isActiveCol ? colors.textPrimary : colors.textSecondary;
   const idStr       = item.content ? `#${item.content.number}` : '';
+
+  // Focus highlight: paint both card lines edge to edge as one solid block.
+  // Priority and label keep their own colours on top of it.
+  if (isSelected && isActiveCol && focus.enabled && !isEditing) {
+    const labelTone = normalizeColor(firstLabel?.color);
+    return (
+      <Box flexDirection="column" marginBottom={1}>
+        <FocusLine>
+          {`${cursorChar} `}
+          <Text color={priorityTone}>{priorityIcon}</Text>
+          {` ${idStr} ${truncate(item.title, titleWidth)}`}
+        </FocusLine>
+        <FocusLine>
+          {assignee ? `  @${truncate(assignee, 8)}` : ' '}
+          {firstLabel && (
+            <Text {...(labelTone ? { color: labelTone } : {})}>{` ${truncate(firstLabel.name, 8)}`}</Text>
+          )}
+        </FocusLine>
+      </Box>
+    );
+  }
 
   return (
     <Box flexDirection="column" marginBottom={1}>
