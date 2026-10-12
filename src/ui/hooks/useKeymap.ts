@@ -19,6 +19,7 @@ export const DEFAULT_KEYMAP = {
   toggleSidebar:  { key: 'b',                   description: 'Toggle sidebar',           group: 'global'     },
   refresh:        { key: 'r',      ctrl: true,  description: 'Refresh from gh',          group: 'global'     },
   toggleView:     { key: 'v',                   description: 'Toggle list / board view', group: 'view'       },
+  toggleDetailPanel: { key: 't',                description: 'Toggle detail panel (list)', group: 'view'     },
   prevProject:    { key: '[',                   description: 'Previous project',         group: 'navigation' },
   nextProject:    { key: ']',                   description: 'Next project',             group: 'navigation' },
   back:           { key: 'escape',              description: 'Close / go back',          group: 'navigation' },

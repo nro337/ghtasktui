@@ -3,7 +3,8 @@ import { Box, Text, useInput } from 'ink';
 import Fuse from 'fuse.js';
 import { useAppContext, hasActiveFilters, type AppState } from '../hooks/useAppState.js';
 import type { AppAction } from '../hooks/useAppState.js';
-import { colors } from '../theme/theme.js';
+import { colors, focus } from '../theme/theme.js';
+import FocusFill from './FocusFill.js';
 import { getIcons } from '../theme/icons.js';
 import { truncate } from '../utils/text.js';
 import type { Dispatch } from 'react';
@@ -103,6 +104,19 @@ function buildCommands(
     }
   }
 
+  if (state.view === 'LIST') {
+    cmds.push({
+      id: 'toggle-detail-panel',
+      label: state.detailPanelOpen ? 'Hide detail panel' : 'Show detail panel',
+      category: 'action',
+      hint: 'T',
+      action: () => {
+        dispatch({ type: 'TOGGLE_DETAIL_PANEL' });
+        dispatch({ type: 'TOGGLE_COMMAND_PALETTE' });
+      },
+    });
+  }
+
   cmds.push({
     id: 'toggle-sidebar',
     label: state.sidebarOpen ? 'Hide sidebar' : 'Show sidebar',
@@ -178,7 +192,7 @@ export default function CommandPalette() {
     () => buildCommands(state, dispatch),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [state.projects, state.activeProject, state.view, state.filters,
-     state.projectCache, state.sidebarOpen, state.config],
+     state.projectCache, state.sidebarOpen, state.detailPanelOpen, state.config],
   );
 
   const fuse = useMemo(
@@ -292,6 +306,21 @@ function renderResults(
     }
 
     const labelWidth = termWidth - 20;
+    if (isSelected && focus.enabled) {
+      const icon = !isSearching ? '' :
+        cmd.category === 'navigation' ? `${icons.project} ` :
+        cmd.category === 'action'     ? '⚡ ' : `${icons.issue} `;
+      const secondary = cmd.secondary ? ` ${cmd.secondary}` : '';
+      nodes.push(
+        <Box key={cmd.id}>
+          <FocusFill text={`› ${icon}${truncate(cmd.label, labelWidth)}${secondary}`} />
+          {cmd.hint && (
+            <Text color={focus.fg} backgroundColor={focus.bg} bold> {cmd.hint}</Text>
+          )}
+        </Box>,
+      );
+      return;
+    }
     nodes.push(
       <Box key={cmd.id} gap={1} justifyContent="space-between">
         <Box gap={1}>

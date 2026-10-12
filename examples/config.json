@@ -7,6 +7,8 @@
   "appearance": {
     "theme": "dark",
     "highContrastText": false,
+    "focusHighlight": false,
+    "focusHighlightColor": "#7C3AED",
     "nerdFonts": false,
     "sidebarWidth": 22,
     "detailPanelRatio": 0.4

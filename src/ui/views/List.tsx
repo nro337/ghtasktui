@@ -6,7 +6,7 @@ import {
   useFieldsLoader,
   useItemMutations,
 } from '../hooks/useGH.js';
-import { colors, priorityColor, statusColor } from '../theme/theme.js';
+import { colors, focus, priorityColor, statusColor } from '../theme/theme.js';
 import { getIcons } from '../theme/icons.js';
 import {
   findField,
@@ -20,14 +20,19 @@ import {
 import { relativeTime } from '../utils/time.js';
 import { filterItems } from '../utils/filterItems.js';
 import { hasActiveFilters } from '../hooks/useAppState.js';
+import { matchKey, DEFAULT_KEYMAP } from '../hooks/useKeymap.js';
 import * as client from '../../gh/client.js';
 import SelectPicker from '../components/SelectPicker.js';
 import InlineTextInput from '../components/InlineTextInput.js';
+import FocusFill, { FocusLine } from '../components/FocusFill.js';
 import ItemDetailPanel from '../components/ItemDetailPanel.js';
 import Spinner from '../components/Spinner.js';
 import type { Item, Field, FieldValue } from '../../gh/types.js';
 
 type ActivePicker = 'status' | 'priority' | null;
+
+// Narrowest terminal that fits the list and the detail panel side by side.
+const SPLIT_MIN_WIDTH = 110;
 
 export default function ListView() {
   const state = useAppState();
@@ -107,10 +112,13 @@ export default function ListView() {
     }
   }, [selectedItem?.id, dispatch]);
 
-  // Split panel: show detail when item selected and terminal is wide enough
+  // Split panel: shown while toggled on and the terminal is wide enough. It
+  // stays in place on group-header rows (with a placeholder) so the layout
+  // doesn't jump as the cursor moves between headers and items.
   const termWidth = process.stdout.columns;
   const detailRatio = state.config.appearance.detailPanelRatio;
-  const showSplit = selectedItem !== null && termWidth >= 110;
+  const canSplit = termWidth >= SPLIT_MIN_WIDTH;
+  const showSplit = state.detailPanelOpen && canSplit;
   const detailWidth = Math.floor(termWidth * detailRatio);
 
   const overlayOpen = state.commandPaletteOpen || state.helpOpen;
@@ -160,6 +168,18 @@ export default function ListView() {
           setCursor(c => c); // trigger re-render without item detail
         } else {
           dispatch({ type: 'NAVIGATE', view: 'PROJECT_LIST' });
+        }
+        return;
+      }
+
+      if (matchKey(input, key, DEFAULT_KEYMAP.toggleDetailPanel)) {
+        dispatch({ type: 'TOGGLE_DETAIL_PANEL' });
+        if (!state.detailPanelOpen && !canSplit) {
+          dispatch({
+            type: 'SHOW_TOAST',
+            message: `Detail panel needs a terminal at least ${SPLIT_MIN_WIDTH} columns wide — Enter opens it full-screen`,
+            kind: 'info',
+          });
         }
         return;
       }
@@ -428,11 +448,12 @@ export default function ListView() {
           <Hint k="P" label="priority" />
           <Hint k="/" label="search" />
           <Hint k="F" label="filter" />
+          <Hint k="T" label="details" />
         </Box>
       </Box>
 
       {/* ── Detail panel (split) ────────────────────────────────────────── */}
-      {showSplit && selectedItem && (
+      {showSplit && (
         <Box
           width={detailWidth}
           flexDirection="column"
@@ -442,16 +463,22 @@ export default function ListView() {
           borderBottom={false}
           borderRight={false}
         >
-          <ItemDetailPanel
-            item={selectedItem}
-            fields={fields}
-            projectNumber={projectNumber}
-            onClose={() => {
-              // In split mode, closing detail just moves focus back to list
-              setActivePicker(null);
-            }}
-            isActive={!overlayOpen && !pickerOpen && !searchMode}
-          />
+          {selectedItem ? (
+            <ItemDetailPanel
+              item={selectedItem}
+              fields={fields}
+              projectNumber={projectNumber}
+              onClose={() => {
+                // In split mode, closing detail just moves focus back to list
+                setActivePicker(null);
+              }}
+              isActive={!overlayOpen && !pickerOpen && !searchMode}
+            />
+          ) : (
+            <Box flexGrow={1} alignItems="center" justifyContent="center">
+              <Text color={colors.textMuted}>Select an item to see its details</Text>
+            </Box>
+          )}
         </Box>
       )}
     </Box>
@@ -474,6 +501,28 @@ function GroupHeader({
   showGrid: boolean;
 }) {
   const labelColor = row.color ? `#${row.color}` : colors.textMuted;
+  const chevron = collapsed ? icons.chevronRight : icons.chevronDown;
+
+  if (isCursor && focus.enabled) {
+    return (
+      <Box
+        flexDirection="column"
+        borderStyle={showGrid ? 'single' : undefined}
+        borderColor={colors.border}
+        borderTop={false}
+        borderLeft={false}
+        borderRight={false}
+        borderBottom={showGrid}
+      >
+        <FocusLine>
+          {` ${chevron} `}
+          <Text {...(row.color ? { color: labelColor } : {})}>{row.label}</Text>
+          {` ${row.count}`}
+        </FocusLine>
+      </Box>
+    );
+  }
+
   return (
     <Box
       gap={1}
@@ -486,7 +535,7 @@ function GroupHeader({
       borderBottom={showGrid}
     >
       <Text color={isCursor ? colors.accentPurple : colors.textMuted}>
-        {collapsed ? icons.chevronRight : icons.chevronDown}
+        {chevron}
       </Text>
       <Text color={labelColor} bold>{row.label}</Text>
       <Text color={colors.textMuted}>{row.count}</Text>
@@ -535,6 +584,42 @@ function ItemRow({
 
   const Div = () => (showGrid ? <Text color={colors.border}>│</Text> : null);
 
+  // Focus highlight: same columns as below, drawn as adjoining filled cells so
+  // the background is unbroken (the gaps and dividers become part of the bar).
+  // Priority and status keep their own colours on top of it.
+  if (isCursor && focus.enabled && !isEditing) {
+    const sep = showGrid ? ' │ ' : ' ';
+    const Sep = () => <FocusFill width={sep.length} text={sep} />;
+    return (
+      <Box
+        borderStyle={showGrid ? 'single' : undefined}
+        borderColor={colors.border}
+        borderTop={false}
+        borderLeft={false}
+        borderRight={false}
+        borderBottom={showGrid}
+      >
+        <FocusFill width={1} />
+        <FocusFill width={1} text="▶" />
+        <FocusFill width={1} />
+        <FocusFill width={2} text={priorityIcon} color={priorityTone} />
+        <Sep />
+        <FocusFill width={1} text={typeIcon} />
+        <Sep />
+        <FocusFill width={6} text={idStr} />
+        <Sep />
+        <FocusFill text={item.title} />
+        <Sep />
+        <FocusFill width={12} text={statusOption?.name ?? ''} color={statusTone} />
+        <Sep />
+        <FocusFill width={10} text={assignee ? `@${assignee.slice(0, 8)}` : ''} />
+        <Sep />
+        <FocusFill width={4} text={dateStr} />
+        <FocusFill width={1} />
+      </Box>
+    );
+  }
+
   return (
     <Box
       gap={1}
@@ -569,7 +654,9 @@ function ItemRow({
       <Div />
 
       {/* Title (grows) */}
-      <Box flexGrow={1} overflow="hidden">
+      {/* With focus highlight on, titles stay on one line so a row keeps its
+          height and column positions when the highlight moves onto it. */}
+      <Box flexGrow={1} overflow="hidden" {...(focus.enabled ? { flexBasis: 0 } : {})}>
         {isEditing ? (
           <InlineTextInput
             value={editDraft}
@@ -581,6 +668,7 @@ function ItemRow({
           <Text
             color={isCursor ? colors.textPrimary : colors.textSecondary}
             bold={isCursor}
+            wrap={focus.enabled ? 'truncate' : 'wrap'}
           >
             {item.title}
           </Text>

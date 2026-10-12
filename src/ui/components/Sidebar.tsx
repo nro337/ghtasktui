@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useAppContext, useAppState } from '../hooks/useAppState.js';
 import { useProjectsLoader } from '../hooks/useGH.js';
-import { colors } from '../theme/theme.js';
+import { colors, focus } from '../theme/theme.js';
 import { getIcons } from '../theme/icons.js';
 import Spinner from './Spinner.js';
 
@@ -44,6 +44,12 @@ export default function Sidebar() {
     { isActive: !overlayOpen },
   );
 
+  // The sidebar marks what is open rather than where the cursor is, so with
+  // focus highlight on it gets a bar in the highlight colour instead of a
+  // second solid row competing with the focused one.
+  const marker = focus.enabled ? '▌' : '▶';
+  const markerColor = focus.enabled ? focus.bg : colors.accentPurpleLight;
+
   return (
     <Box
       flexDirection="column"
@@ -77,8 +83,8 @@ export default function Sidebar() {
 
           return (
             <Box key={project.number} gap={1}>
-              <Text color={isActive ? colors.accentPurpleLight : colors.textMuted}>
-                {isActive ? '▶' : ' '}
+              <Text color={isActive ? markerColor : colors.textMuted}>
+                {isActive ? marker : ' '}
               </Text>
               <Text
                 color={isActive ? colors.textPrimary : colors.textSecondary}
@@ -96,29 +102,20 @@ export default function Sidebar() {
         <Text color={colors.textMuted} bold>VIEWS</Text>
       </Box>
 
-      <Box gap={1}>
-        <Text color={state.view === 'LIST' ? colors.accentPurpleLight : colors.textMuted}>
-          {icons.list}
-        </Text>
-        <Text
-          color={state.view === 'LIST' ? colors.textPrimary : colors.textSecondary}
-          bold={state.view === 'LIST'}
-        >
-          List
-        </Text>
-      </Box>
-
-      <Box gap={1}>
-        <Text color={state.view === 'BOARD' ? colors.accentPurpleLight : colors.textMuted}>
-          {icons.board}
-        </Text>
-        <Text
-          color={state.view === 'BOARD' ? colors.textPrimary : colors.textSecondary}
-          bold={state.view === 'BOARD'}
-        >
-          Board
-        </Text>
-      </Box>
+      {([['LIST', icons.list, 'List'], ['BOARD', icons.board, 'Board']] as const).map(
+        ([view, icon, label]) => {
+          const isActive = state.view === view;
+          return (
+            <Box key={view} gap={1}>
+              {focus.enabled && <Text color={markerColor}>{isActive ? marker : ' '}</Text>}
+              <Text color={isActive ? markerColor : colors.textMuted}>{icon}</Text>
+              <Text color={isActive ? colors.textPrimary : colors.textSecondary} bold={isActive}>
+                {label}
+              </Text>
+            </Box>
+          );
+        },
+      )}
 
       {/* Spacer + nav hint */}
       <Box flexGrow={1} />

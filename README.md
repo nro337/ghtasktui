@@ -26,6 +26,7 @@ A Linear-inspired terminal UI for GitHub Projects, powered by the `gh` CLI.
 - **Optimistic updates** — field changes apply immediately in the UI
 - **Nerd Fonts support** — richer icons with `GHTASKTUI_NERD_FONTS=1`
 - **Theming** — choose between dark and midnight themes, with optional high-contrast text
+- **Focus highlight** — optional solid background on the focused row, in one of 10 preset colors or any hex color
 - **Configurable** — JSON config at `~/.config/ghtasktui/config.json`
 
 ## Requirements
@@ -75,6 +76,7 @@ ghtasktui --debug             # enable debug log to ~/.config/ghtasktui/debug.lo
 | `Ctrl+K`   | Command Palette     |
 | `?`        | Help overlay        |
 | `B`        | Toggle sidebar      |
+| `T`        | Toggle detail panel (List) |
 | `V`        | Toggle List / Board |
 | `R`        | Refresh             |
 | `Q` / `q`  | Quit                |
@@ -121,6 +123,8 @@ Create `~/.config/ghtasktui/config.json`:
   "appearance": {
     "theme": "midnight",
     "highContrastText": true,
+    "focusHighlight": true,
+    "focusHighlightColor": "#10B981",
     "nerdFonts": true,
     "sidebarWidth": 24,
     "detailPanelRatio": 0.45

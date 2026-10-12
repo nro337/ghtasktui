@@ -186,8 +186,76 @@ export const colors: Palette = paletteFor('dark', false);
 
 export type ColorToken = keyof typeof colors;
 
-export function initTheme(opts: { theme: ThemeName; highContrastText: boolean }) {
+// ── Focus highlight ─────────────────────────────────────────────────────────
+
+export interface FocusHighlightPreset {
+  id: string;
+  name: string;
+  color: string;
+}
+
+// Solid background choices for the focused row, drawn from the theme palettes.
+// All are saturated mid-tones so the bar stands out on dark and light themes.
+export const FOCUS_HIGHLIGHT_PRESETS: FocusHighlightPreset[] = [
+  { id: 'violet',  name: 'Violet',  color: '#7C3AED' },
+  { id: 'indigo',  name: 'Indigo',  color: '#6366F1' },
+  { id: 'blue',    name: 'Blue',    color: '#3B82F6' },
+  { id: 'sky',     name: 'Sky',     color: '#60A5FA' },
+  { id: 'ocean',   name: 'Ocean',   color: '#268BD2' },
+  { id: 'emerald', name: 'Emerald', color: '#10B981' },
+  { id: 'olive',   name: 'Olive',   color: '#859900' },
+  { id: 'amber',   name: 'Amber',   color: '#EAB308' },
+  { id: 'orange',  name: 'Orange',  color: '#F97316' },
+  { id: 'red',     name: 'Red',     color: '#EF4444' },
+];
+
+export const DEFAULT_FOCUS_HIGHLIGHT_COLOR = '#7C3AED';
+
+/** Parse `#RGB` / `#RRGGBB` (leading # optional) into `#RRGGBB`, or undefined if invalid. */
+export function parseHexColor(raw: string | undefined): string | undefined {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(raw?.trim() ?? '');
+  const hex = m?.[1];
+  if (!hex) return undefined;
+  const full = hex.length === 3 ? [...hex].map(c => c + c).join('') : hex;
+  return `#${full.toUpperCase()}`;
+}
+
+function luminance(hex: string): number {
+  const channel = (offset: number) => {
+    const v = parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+/** WCAG contrast ratio between two `#RRGGBB` colors (1–21). */
+export function contrastRatio(a: string, b: string): number {
+  const la = luminance(a);
+  const lb = luminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/** Black or white, whichever reads better on `bg`. Always at least 4.5:1. */
+export function readableTextOn(bg: string): string {
+  return contrastRatio(bg, '#000000') >= contrastRatio(bg, '#FFFFFF') ? '#000000' : '#FFFFFF';
+}
+
+function focusFor(enabled: boolean, color: string | undefined) {
+  const bg = parseHexColor(color) ?? DEFAULT_FOCUS_HIGHLIGHT_COLOR;
+  return { enabled, bg, fg: readableTextOn(bg) };
+}
+
+// Resolved focus-highlight settings; mutated by initTheme like `colors`.
+export const focus = focusFor(false, undefined);
+
+export function initTheme(opts: {
+  theme: ThemeName;
+  highContrastText: boolean;
+  focusHighlight?: boolean;
+  focusHighlightColor?: string;
+}) {
   Object.assign(colors, paletteFor(opts.theme, opts.highContrastText));
+  Object.assign(focus, focusFor(opts.focusHighlight ?? false, opts.focusHighlightColor));
 }
 
 export function statusColor(name: string | undefined): string {

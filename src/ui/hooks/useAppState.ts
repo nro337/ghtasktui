@@ -49,6 +49,7 @@ export interface AppState {
   selectedItem: Item | null;
   owner: string;
   sidebarOpen: boolean;
+  detailPanelOpen: boolean;
   commandPaletteOpen: boolean;
   helpOpen: boolean;
   commentsOverlayOpen: boolean;
@@ -75,6 +76,7 @@ export type AppAction =
   | { type: 'SET_PROJECT'; project: Project }
   | { type: 'SET_ITEM'; item: Item }
   | { type: 'TOGGLE_SIDEBAR' }
+  | { type: 'TOGGLE_DETAIL_PANEL' }
   | { type: 'TOGGLE_COMMAND_PALETTE' }
   | { type: 'TOGGLE_HELP' }
   | { type: 'TOGGLE_COMMENTS_OVERLAY' }
@@ -141,6 +143,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
 
     case 'TOGGLE_SIDEBAR':
       return { ...state, sidebarOpen: !state.sidebarOpen };
+
+    case 'TOGGLE_DETAIL_PANEL':
+      return { ...state, detailPanelOpen: !state.detailPanelOpen };
 
     case 'TOGGLE_COMMAND_PALETTE':
       return { ...state, commandPaletteOpen: !state.commandPaletteOpen };
@@ -261,6 +266,7 @@ export function initialState(config: Config): AppState {
     selectedItem: null,
     owner: config.general.defaultOwner,
     sidebarOpen: true,
+    detailPanelOpen: true,
     commandPaletteOpen: false,
     helpOpen: false,
     commentsOverlayOpen: false,

@@ -15,7 +15,7 @@ import type { Item, Project, Field } from '../../../gh/types.js';
 
 const mockConfig: Config = {
   general: { defaultOwner: '@me', defaultView: 'list', refreshInterval: 0 },
-  appearance: { theme: 'dark', highContrastText: false, nerdFonts: false, sidebarWidth: 22, detailPanelRatio: 0.4, showGrid: false },
+  appearance: { theme: 'dark', highContrastText: false, focusHighlight: false, focusHighlightColor: '#7C3AED', nerdFonts: false, sidebarWidth: 22, detailPanelRatio: 0.4, showGrid: false },
   keybindings: {},
   projects: {},
 };
@@ -123,6 +123,15 @@ describe('TOGGLE_SIDEBAR', () => {
   it('flips sidebarOpen from false to true', () => {
     const next = reduce(makeState({ sidebarOpen: false }), { type: 'TOGGLE_SIDEBAR' });
     expect(next.sidebarOpen).toBe(true);
+  });
+});
+
+describe('TOGGLE_DETAIL_PANEL', () => {
+  it('starts open and flips detailPanelOpen', () => {
+    const closed = reduce(makeState(), { type: 'TOGGLE_DETAIL_PANEL' });
+    expect(makeState().detailPanelOpen).toBe(true);
+    expect(closed.detailPanelOpen).toBe(false);
+    expect(reduce(closed, { type: 'TOGGLE_DETAIL_PANEL' }).detailPanelOpen).toBe(true);
   });
 });
 
